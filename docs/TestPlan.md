@@ -97,3 +97,64 @@ This document outlines manual and automated test cases for the PhotoSort applica
    - Create execution log for script
    - Query logs by script and status
 4. **Expected Outcome**: Execution logs are created and queryable
+
+## Step 3: Database Connection Configuration
+
+### Test Case: Database Connection Successful
+1. **Name**: Database Connection Test
+2. **Functionality Tested**: Connection to PostgreSQL database via HikariCP
+3. **Steps Required**:
+   - Start application
+   - Verify DataSource is created
+   - Obtain connection from pool
+   - Check connection metadata
+4. **Expected Outcome**: Connection established to PostgreSQL database
+
+### Test Case: Entity Mapping Validation
+1. **Name**: Entity Mapping Test
+2. **Functionality Tested**: All entity classes correctly map to database tables
+3. **Steps Required**:
+   - Persist instance of each entity type
+   - Verify auto-generated IDs
+   - Verify all fields saved correctly
+4. **Expected Outcome**: All 11 entity types can be persisted without errors
+
+### Test Case: CRUD Operations with Foreign Keys
+1. **Name**: Foreign Key CRUD Test
+2. **Functionality Tested**: CRUD operations maintaining referential integrity
+3. **Steps Required**:
+   - Create user
+   - Create photo with foreign key to user
+   - Update photo
+   - Delete photo
+   - Verify foreign key maintained throughout
+4. **Expected Outcome**: All CRUD operations succeed with valid foreign keys
+
+### Test Case: Cascade Delete Validation
+1. **Name**: Cascade Delete Test
+2. **Functionality Tested**: CASCADE DELETE on dependent entities
+3. **Steps Required**:
+   - Create photo with EXIF data
+   - Delete photo
+   - Verify EXIF data automatically deleted
+4. **Expected Outcome**: Child entities deleted when parent is deleted
+
+### Test Case: SQL Query Generation
+1. **Name**: Hibernate SQL Generation Test
+2. **Functionality Tested**: Hibernate generates correct SQL for operations
+3. **Steps Required**:
+   - Enable SQL logging
+   - Perform save and query operations
+   - Verify SQL appears in logs
+   - Check SQL syntax is correct
+4. **Expected Outcome**: Valid PostgreSQL SQL generated for all operations
+
+### Test Case: Transaction Rollback
+1. **Name**: Transaction Rollback Test
+2. **Functionality Tested**: Transaction rollback on constraint violation
+3. **Steps Required**:
+   - Save valid entity
+   - Attempt to save duplicate (violates unique constraint)
+   - Verify exception thrown
+   - Verify database state unchanged
+4. **Expected Outcome**: Transaction rolls back, no partial data saved

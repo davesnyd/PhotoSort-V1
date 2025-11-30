@@ -163,3 +163,122 @@ Key Maven dependencies:
 - Soft delete capability
 - Database sharding for large photo collections
 - Read replicas for query scaling
+
+---
+
+## Step 3: Database Connection Configuration
+
+### Functionality Created
+**Advanced Database Connection Management**
+
+This step adds explicit configuration for database connectivity, connection pooling, and transaction management to optimize performance and reliability.
+
+### Implementation Details
+
+#### DatabaseConfig Class
+Created `com.photoSort.config.DatabaseConfig` with:
+
+**DataSource Configuration**:
+- HikariCP connection pool (industry-leading performance)
+- Configurable pool size (default: max 10, min idle 5)
+- Connection timeout: 30 seconds
+- Connection test query for health checks
+- Prepared statement caching enabled
+
+**Entity Manager Configuration**:
+- Scans `com.photoSort.model` package for entities
+- Hibernate as JPA provider
+- PostgreSQL dialect
+- Batch processing enabled (batch size: 20)
+- Ordered inserts/updates for efficiency
+
+**Transaction Manager**:
+- JPA-based transaction management
+- Automatic rollback on exceptions
+- Support for nested transactions
+- Integration with Spring's `@Transactional`
+
+### Configuration Properties
+
+**Connection Pool Settings**:
+```properties
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=30000
+```
+
+**Hibernate Performance Settings**:
+```properties
+hibernate.jdbc.batch_size=20
+hibernate.order_inserts=true
+hibernate.order_updates=true
+hibernate.jdbc.batch_versioned_data=true
+```
+
+### Design Patterns Used
+
+1. **Factory Pattern**: EntityManagerFactory creates EntityManager instances
+2. **Singleton Pattern**: DataSource is application-scoped singleton
+3. **Template Pattern**: TransactionTemplate for programmatic transactions
+4. **Proxy Pattern**: Spring uses proxies for `@Transactional` methods
+
+### Testing
+
+Additional test class `DatabaseConnectionConfigTest` covers:
+- Database connection establishment
+- Entity mapping validation for all 11 entities
+- CRUD operations with foreign key constraints
+- Cascade delete behavior
+- Hibernate SQL generation
+- Transaction rollback on errors
+
+### Performance Optimizations
+
+1. **Connection Pooling**: Reuses database connections instead of creating new ones
+2. **Prepared Statement Caching**: Caches compiled SQL statements (250 statements, 2048 chars each)
+3. **Batch Processing**: Groups multiple SQL operations to reduce round trips
+4. **Ordered Operations**: Minimizes database deadlocks by ordering inserts/updates
+
+### Limitations
+
+- Second-level cache disabled (can be enabled later with Redis/Hazelcast)
+- Query cache disabled (enable when read-heavy workload identified)
+- Connection pool size fixed (should be tuned based on actual load)
+- No read-write splitting (can add read replicas later)
+
+### Expectations
+
+- PostgreSQL must support prepared statement caching
+- Database must handle batch operations efficiently
+- Connection pool size appropriate for expected concurrent users
+- Transaction isolation level is READ_COMMITTED (PostgreSQL default)
+
+### Monitoring
+
+Key metrics to monitor:
+- Active connections (should stay below maximum pool size)
+- Connection wait time (should be minimal)
+- Transaction duration (long transactions may indicate issues)
+- Query execution time (identify slow queries)
+
+HikariCP provides JMX beans for monitoring:
+- `HikariPoolMXBean` for pool statistics
+- Active/idle connection counts
+- Connection acquisition time
+
+### Development Notes
+
+1. **Adding transactional methods**:
+   - Annotate service methods with `@Transactional`
+   - Keep transactions as short as possible
+   - Avoid external calls within transactions
+
+2. **Tuning connection pool**:
+   - Monitor connection usage under load
+   - Formula: connections = ((core_count * 2) + effective_spindle_count)
+   - For 4 cores with SSD: 8-10 connections is optimal
+
+3. **Debugging transaction issues**:
+   - Enable transaction logging: `logging.level.org.springframework.transaction=DEBUG`
+   - Check for `@Transactional` on interfaces vs implementations
+   - Verify proxy creation for transactional beans

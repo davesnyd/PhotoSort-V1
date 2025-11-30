@@ -54,6 +54,61 @@ The database is the foundation of the PhotoSort system. It stores all informatio
 - **Database not found**: Ensure PhotoSortData database was created
 - **Authentication failed**: Check DB_USERNAME and DB_PASSWORD environment variables
 
+## Step 3: Database Connection Configuration
+
+### Functionality Created
+**Optimized Database Connection Management**
+
+The application now uses advanced connection pooling and transaction management for improved performance and reliability.
+
+### What This Means for Users
+
+#### Performance Improvements
+- **Faster response times**: Connection pooling eliminates the overhead of creating new database connections
+- **Better concurrency**: Up to 10 simultaneous users can access the database efficiently
+- **Batch operations**: Multiple database operations are grouped together for speed
+
+#### Reliability Improvements
+- **Connection health checks**: Bad connections are automatically detected and replaced
+- **Automatic rollback**: If an error occurs, database changes are automatically undone
+- **Connection timeout**: Prevents hanging when database is slow to respond
+
+### Technical Details (For Advanced Users)
+
+#### Connection Pool Configuration
+The application uses HikariCP with these settings:
+- Maximum connections: 10
+- Minimum idle connections: 5
+- Connection timeout: 30 seconds
+
+To monitor connection pool health:
+1. Check application logs for "HikariPool" entries
+2. Look for connection acquisition times
+3. Watch for connection timeout warnings
+
+#### Transaction Management
+All data modifications are wrapped in transactions:
+- Changes are saved together or not at all
+- Prevents partial updates that could corrupt data
+- Automatically retries on temporary failures
+
+### Troubleshooting
+
+**Slow database operations**:
+- Check if connection pool is exhausted (all 10 connections in use)
+- Look for long-running transactions in application logs
+- Consider increasing pool size if consistently hitting limit
+
+**Transaction rollback errors**:
+- Check for unique constraint violations (duplicate data)
+- Verify foreign key relationships are valid
+- Review application logs for specific error messages
+
+**Connection pool exhaustion**:
+- Error: "Connection is not available, request timed out after 30000ms"
+- Solution: Ensure database is accessible and responsive
+- Solution: Check for connection leaks (connections not being closed)
+
 ---
 
 *Additional user functionality will be documented as features are implemented.*
