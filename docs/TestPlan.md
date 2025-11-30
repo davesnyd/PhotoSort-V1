@@ -1,0 +1,99 @@
+# Test Plan
+
+This document outlines manual and automated test cases for the PhotoSort application.
+
+## Step 1: Database Configuration
+
+### Test Case: Database Connection
+1. **Name**: Database Connection Test
+2. **Functionality Tested**: Connection to PostgreSQL database using environment variables
+3. **Steps Required**:
+   - Set environment variables DB_USERNAME and DB_PASSWORD
+   - Start the Spring Boot application
+   - Verify application starts without database connection errors
+4. **Expected Outcome**: Application connects successfully to PhotoSortData database
+
+### Test Case: User CRUD Operations
+1. **Name**: User CRUD Operations Test
+2. **Functionality Tested**: Create, Read, Update, Delete operations on User entity
+3. **Steps Required**:
+   - Run DatabaseSchemaTest.testInsertUser()
+   - Verify user is created with all fields
+   - Query user by Google ID and email
+   - Update user type
+   - Delete user
+4. **Expected Outcome**: All CRUD operations succeed without errors
+
+### Test Case: Photo Foreign Key Relationship
+1. **Name**: Photo Foreign Key Test
+2. **Functionality Tested**: Foreign key relationship between Photo and User
+3. **Steps Required**:
+   - Create a user
+   - Create a photo associated with that user
+   - Query photos by owner
+   - Verify relationship integrity
+4. **Expected Outcome**: Photo correctly references user, queries return expected results
+
+### Test Case: Cascade Delete
+1. **Name**: Cascade Delete Test
+2. **Functionality Tested**: Cascade delete from Photo to EXIF data
+3. **Steps Required**:
+   - Create a photo with EXIF data
+   - Delete the photo
+   - Verify EXIF data is also deleted
+4. **Expected Outcome**: EXIF data is automatically deleted when photo is deleted
+
+### Test Case: Unique Constraints
+1. **Name**: Unique Constraint Test
+2. **Functionality Tested**: Unique constraints on user Google ID, email, and photo file path
+3. **Steps Required**:
+   - Create a user
+   - Attempt to create another user with same Google ID
+   - Verify exception is thrown
+4. **Expected Outcome**: Database rejects duplicate entries, exception is thrown
+
+### Test Case: Metadata Field and Photo Metadata
+1. **Name**: Metadata Operations Test
+2. **Functionality Tested**: Custom metadata field creation and photo metadata association
+3. **Steps Required**:
+   - Create metadata field (e.g., "Location")
+   - Create photo metadata linking photo to field with value
+   - Query metadata for photo
+4. **Expected Outcome**: Metadata correctly associated with photo, queryable
+
+### Test Case: Tag Operations
+1. **Name**: Tag Operations Test
+2. **Functionality Tested**: Tag creation and photo-tag association
+3. **Steps Required**:
+   - Create tag (e.g., "nature")
+   - Associate tag with photo
+   - Query tags for photo
+4. **Expected Outcome**: Tags correctly associated with photos, queryable
+
+### Test Case: Photo Permissions
+1. **Name**: Photo Permissions Test
+2. **Functionality Tested**: Photo access permission management
+3. **Steps Required**:
+   - Create two users
+   - Create a photo owned by user 1
+   - Grant user 2 permission to access photo
+   - Verify permission exists
+4. **Expected Outcome**: Permission is created, user 2 can access private photo
+
+### Test Case: Script Management
+1. **Name**: Script Management Test
+2. **Functionality Tested**: Script creation and configuration
+3. **Steps Required**:
+   - Create script with file extension mapping
+   - Create script with periodic execution
+   - Query scripts by file extension
+4. **Expected Outcome**: Scripts are created and queryable by various criteria
+
+### Test Case: Script Execution Logging
+1. **Name**: Script Execution Log Test
+2. **Functionality Tested**: Logging of script executions
+3. **Steps Required**:
+   - Create script
+   - Create execution log for script
+   - Query logs by script and status
+4. **Expected Outcome**: Execution logs are created and queryable
