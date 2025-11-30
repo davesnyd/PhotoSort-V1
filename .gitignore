@@ -1,5 +1,10 @@
 # Vim undo files
 *.un~
 
+# Vim swap files
+*.swp
+*.swo
+
 # Editor backups
 *~
+original.*
