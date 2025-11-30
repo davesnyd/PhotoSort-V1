@@ -1,0 +1,5 @@
+# Vim undo files
+*.un~
+
+# Editor backups
+*~
