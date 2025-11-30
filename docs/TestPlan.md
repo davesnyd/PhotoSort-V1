@@ -158,3 +158,101 @@ This document outlines manual and automated test cases for the PhotoSort applica
    - Verify exception thrown
    - Verify database state unchanged
 4. **Expected Outcome**: Transaction rolls back, no partial data saved
+
+## Step 4: OAuth 2.0 Google Authentication
+
+### Test Case: First Time User Login
+1. **Name**: New User OAuth Login Test
+2. **Functionality Tested**: Creating new user account on first OAuth login
+3. **Steps Required**:
+   - Simulate OAuth login with new Google ID
+   - Verify user created in database
+   - Check user type is USER (default)
+   - Verify first login date and last login date are set
+4. **Expected Outcome**: New user record created with correct attributes
+
+### Test Case: Returning User Login
+1. **Name**: Existing User OAuth Login Test
+2. **Functionality Tested**: Updating last login date for returning users
+3. **Steps Required**:
+   - Create user with past login date
+   - Simulate OAuth login with same Google ID
+   - Verify last login date is updated
+   - Verify first login date remains unchanged
+4. **Expected Outcome**: Last login date updated, first login preserved
+
+### Test Case: Find User by Google ID
+1. **Name**: Find User by Google ID Test
+2. **Functionality Tested**: User lookup by OAuth identifier
+3. **Steps Required**:
+   - Create user with Google ID
+   - Call findByGoogleId method
+   - Verify correct user returned
+4. **Expected Outcome**: User found and returned correctly
+
+### Test Case: Update User Type
+1. **Name**: User Type Update Test
+2. **Functionality Tested**: Changing user from USER to ADMIN
+3. **Steps Required**:
+   - Create regular user
+   - Update user type to ADMIN
+   - Verify user type changed in database
+   - Check isAdmin returns true
+4. **Expected Outcome**: User type successfully updated
+
+### Test Case: Admin Status Check
+1. **Name**: Admin Status Check Test
+2. **Functionality Tested**: Determining if user is administrator
+3. **Steps Required**:
+   - Create regular user
+   - Check isAdmin (should be false)
+   - Promote to admin
+   - Check isAdmin (should be true)
+4. **Expected Outcome**: Admin status correctly reflects user type
+
+### Test Case: OAuth Configuration Loading
+1. **Name**: OAuth Configuration Test
+2. **Functionality Tested**: Loading OAuth credentials from environment
+3. **Steps Required**:
+   - Set OAUTH_CLIENT_ID environment variable
+   - Set OAUTH_CLIENT_SECRET environment variable
+   - Start application
+   - Verify OAuth configuration loaded
+4. **Expected Outcome**: OAuth client configured successfully
+
+### Test Case: Unauthenticated API Access
+1. **Name**: Unauthenticated Request Test
+2. **Functionality Tested**: Blocking unauthenticated requests to protected endpoints
+3. **Steps Required**:
+   - Make request to /api/auth/current without authentication
+   - Verify 401 status returned
+4. **Expected Outcome**: Access denied with 401 Unauthorized
+
+### Test Case: Authenticated API Access
+1. **Name**: Authenticated Request Test
+2. **Functionality Tested**: Allowing authenticated requests with user context
+3. **Steps Required**:
+   - Authenticate user via OAuth
+   - Make request to /api/auth/current
+   - Verify user information returned
+4. **Expected Outcome**: User data returned with 200 OK
+
+### Test Case: Session Management
+1. **Name**: Session Timeout Test
+2. **Functionality Tested**: Session expiration after configured timeout
+3. **Steps Required**:
+   - Login user
+   - Wait for session timeout (30 minutes)
+   - Make request to protected endpoint
+   - Verify session expired
+4. **Expected Outcome**: Session expires, authentication required again
+
+### Test Case: CSRF Protection
+1. **Name**: CSRF Protection Test
+2. **Functionality Tested**: CSRF token validation on state-changing requests
+3. **Steps Required**:
+   - Make POST request without CSRF token
+   - Verify request rejected
+   - Make POST request with valid CSRF token
+   - Verify request accepted
+4. **Expected Outcome**: CSRF protection enforced correctly

@@ -29,3 +29,17 @@ This document captures insights and lessons learned during the PhotoSort develop
 
 - **Problem**: Hibernate performance can be improved with batch processing
   **Approach to Improve**: Enable Hibernate batch processing with `hibernate.jdbc.batch_size=20` and order inserts/updates. This reduces database round trips for bulk operations.
+
+## Step 4: OAuth 2.0 Google Authentication
+
+- **Problem**: OAuth user information needs to be integrated with application's user model
+  **Approach to Improve**: Create CustomOAuth2UserService that extends DefaultOAuth2UserService. In loadUser method, extract OAuth attributes and call UserService.processOAuthLogin to create/update user record.
+
+- **Problem**: First-time users need different handling than returning users
+  **Approach to Improve**: In UserService.processOAuthLogin, check if user exists by Google ID. If not found, create new user with USER type and set first login date. If found, only update last login date.
+
+- **Problem**: OAuth configuration secrets should not be hardcoded
+  **Approach to Improve**: Use environment variables for OAuth client ID and client secret. Reference them in application.properties with ${VARIABLE_NAME} syntax.
+
+- **Problem**: Need to distinguish between regular users and administrators
+  **Approach to Improve**: Add UserType enum (USER, ADMIN) to User entity. Default new users to USER type. Provide UserService.updateUserType method for administrators to promote users.
