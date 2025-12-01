@@ -111,4 +111,173 @@ All data modifications are wrapped in transactions:
 
 ---
 
+## Step 4: OAuth 2.0 Google Authentication
+
+### Functionality Created
+**Google Account Authentication**
+
+PhotoSort uses Google OAuth 2.0 to securely authenticate users. You must have a Google account to access the system.
+
+### Logging In
+
+#### First-Time Login
+1. Navigate to the PhotoSort application URL
+2. Click the **"Sign in with Google"** button
+3. You'll be redirected to Google's login page
+4. Enter your Google credentials
+5. Grant PhotoSort permission to access your basic profile information
+6. You'll be redirected back to PhotoSort and logged in
+7. Your user account is automatically created with "User" permissions
+
+#### Subsequent Logins
+1. Navigate to the PhotoSort application
+2. Click **"Sign in with Google"**
+3. If you're already logged into Google, you'll be automatically authenticated
+4. You'll be taken to the PhotoSort home page
+
+### User Types
+
+#### User (Standard Permission)
+- Can view and manage their own photos
+- Can view public photos
+- Can view photos they've been granted access to
+- Cannot access administrative functions
+
+#### Administrator
+- Has all User permissions plus:
+- Can manage all users
+- Can manage all photos in the system
+- Can configure system scripts
+- Can modify system configuration
+- Can promote other users to Administrator status
+
+### Logging Out
+1. Click your name in the top-right corner of the navigation bar
+2. Click the **"Logout"** button
+3. You'll be logged out and redirected to the login page
+
+### Troubleshooting
+
+**Can't log in**:
+- Ensure you have an active Google account
+- Check that your browser allows cookies
+- Try clearing your browser cache
+- Verify the application URL is correct
+
+**Permission denied errors**:
+- You're trying to access administrator-only features
+- Contact your system administrator to request elevated permissions
+
+**Session expired**:
+- Your session times out after a period of inactivity
+- Simply log in again to continue
+
+---
+
+## Step 5: React Frontend Application
+
+### Functionality Created
+**Web-Based User Interface**
+
+PhotoSort now has a modern, responsive web interface built with React. You can access all PhotoSort features through your web browser.
+
+### Accessing the Application
+
+#### Starting the Frontend
+For development:
+```bash
+cd photosort-frontend
+npm start
+```
+The application will open in your browser at `http://localhost:3000`
+
+For production:
+```bash
+cd photosort-frontend
+npm run build
+```
+Serve the build folder with any static web server.
+
+### User Interface Components
+
+#### Login Page
+- **Location**: `http://localhost:3000/login`
+- **Elements**:
+  - PhotoSort logo and title
+  - "Sign in with Google" button with Google logo
+  - Instructions for logging in
+- **Usage**:
+  - Click the Google sign-in button to authenticate
+  - You'll be redirected to Google's authentication page
+  - After successful login, you'll be taken to the home page
+
+#### Navigation Bar (After Login)
+Located at the top of every page with navy blue background:
+
+**For All Users**:
+- **PhotoSort** (logo/brand) - Click to return to home page
+- **Home** - Main dashboard
+- **My Photos** - Your personal photo library (placeholder for future)
+- Your name - Displays current user
+- **Logout** button - Sign out of the application
+
+**For Administrators**:
+Additional menu items:
+- **Users** - Manage all users (placeholder for Step 6)
+- **Photos** - Manage all photos (placeholder for Step 7)
+- **Scripts** - Configure automated scripts (placeholder for Step 11)
+- **Configuration** - System settings (placeholder for Step 13)
+
+#### Home Page
+- **Welcome message**: Personalized greeting with your name
+- **Feature cards**: Overview of PhotoSort capabilities
+  - Photo Management
+  - Smart Tagging
+  - EXIF Data
+  - Search & Filter
+
+### Color Scheme
+PhotoSort uses a consistent color palette:
+- **Primary** (Burgundy): #800020 - Used for headings and emphasis
+- **Secondary** (Navy Blue): #000080 - Used for navigation and borders
+- **Accent** (Cream): #FFFDD0 - Used for backgrounds and text
+
+### Browser Requirements
+PhotoSort supports the latest versions of:
+- Google Chrome
+- Mozilla Firefox
+- Safari
+- Microsoft Edge
+
+### Responsive Design
+- Optimized for desktop browsers (1024px and wider)
+- Tablet support for screens 768px and wider
+- Mobile support is planned for future releases
+
+### Troubleshooting
+
+**Application won't start**:
+- Ensure Node.js 18+ is installed: `node --version`
+- Install dependencies: `npm install`
+- Check that port 3000 is not in use
+- Review console for error messages
+
+**Can't connect to backend**:
+- Verify backend is running on port 8080
+- Check the `.env` file has correct `REACT_APP_API_BASE_URL`
+- Look for CORS errors in browser console
+
+**Blank page after login**:
+- Check browser console for JavaScript errors
+- Verify authentication was successful
+- Try logging out and back in
+- Clear browser cache and cookies
+
+**Build errors**:
+- Delete `node_modules` folder and `package-lock.json`
+- Run `npm install` again
+- Ensure all dependencies are compatible
+
+---
+
 *Additional user functionality will be documented as features are implemented.*

@@ -1,0 +1,106 @@
+/**
+ * Navigation Styles
+ * Copyright 2025, David Snyderman
+ */
+
+.navigation {
+  background-color: #000080;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.nav-brand {
+  color: #FFFDD0;
+  font-size: 24px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.nav-brand:hover {
+  color: #fff;
+}
+
+.nav-links {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-link {
+  color: #FFFDD0;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  background-color: #800020;
+  color: #FFFDD0;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.nav-username {
+  color: #FFFDD0;
+  font-size: 14px;
+}
+
+.nav-logout-btn {
+  background-color: #800020;
+  color: #FFFDD0;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.nav-logout-btn:hover {
+  background-color: #a00028;
+  box-shadow: 0 2px 8px rgba(128, 0, 32, 0.3);
+}
+
+.nav-logout-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 20px;
+  }
+
+  .nav-links {
+    width: 100%;
+    order: 3;
+    margin-top: 10px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .nav-username {
+    display: none;
+  }
+}
