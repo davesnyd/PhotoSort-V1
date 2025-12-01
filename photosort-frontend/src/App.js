@@ -14,6 +14,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import OAuthCallback from './pages/OAuthCallback';
 import Home from './pages/Home';
+import Users from './pages/Users';
+import Photos from './pages/Photos';
 import './App.css';
 
 // Create a client for React Query
@@ -65,10 +67,16 @@ function App() {
                 path="/users"
                 element={
                   <ProtectedRoute adminOnly={true}>
-                    <div style={{ padding: '40px', backgroundColor: '#FFFDD0', minHeight: '100vh' }}>
-                      <h2 style={{ color: '#800020' }}>User Management</h2>
-                      <p style={{ color: '#000080' }}>This feature will be implemented in Step 6.</p>
-                    </div>
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/photos/:userId"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <Photos />
                   </ProtectedRoute>
                 }
               />

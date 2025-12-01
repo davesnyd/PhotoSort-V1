@@ -1,0 +1,53 @@
+/**
+ * QuickSearch Styles
+ * Copyright 2025, David Snyderman
+ */
+
+.quick-search {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.quick-search-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.quick-search-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.quick-search-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+}
+
+.quick-search-btn,
+.quick-search-clear {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.quick-search-btn:hover {
+  background-color: #45a049;
+}
+
+.quick-search-clear {
+  background-color: #f44336;
+}
+
+.quick-search-clear:hover {
+  background-color: #da190b;
+}

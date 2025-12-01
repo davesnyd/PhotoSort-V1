@@ -1,0 +1,48 @@
+/**
+ * SearchControls Styles
+ * Copyright 2025, David Snyderman
+ */
+
+.search-controls {
+  width: 100%;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.search-tabs {
+  display: flex;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.search-tab {
+  flex: 1;
+  padding: 12px 20px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s;
+  border-bottom: 3px solid transparent;
+}
+
+.search-tab:hover {
+  background-color: #ececec;
+  color: #333;
+}
+
+.search-tab.active {
+  background-color: white;
+  color: #4CAF50;
+  border-bottom-color: #4CAF50;
+  font-weight: bold;
+}
+
+.search-content {
+  padding: 20px;
+}

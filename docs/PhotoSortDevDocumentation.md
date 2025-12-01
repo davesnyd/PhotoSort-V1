@@ -668,3 +668,413 @@ npm run build && serve -s build    # Build and serve
    - `useCallback` dependencies handled in context
    - Production build has no warnings
    - Development may show exhaustive-deps warnings
+
+## Step 6: Admin Navigation and User Table Page
+
+### Functionality Created
+**Complete User Management System for Administrators**
+
+This step implements a fully-featured user management interface with pagination, sorting, searching, and inline editing capabilities.
+
+### Implementation Details
+
+#### Backend Components
+
+##### DTOs (Data Transfer Objects)
+Created 5 new DTOs in `com.photoSort.dto` package:
+
+1. **UserDTO.java**
+   - Transfers user data to frontend with calculated photo count
+   - Excludes sensitive `googleId` field for security
+   - Factory method: `fromUser(User user, long photoCount)`
+   - Fields: userId, email, displayName, userType, firstLoginDate, lastLoginDate, photoCount
+
+2. **UserUpdateRequest.java**
+   - Request body for updating user type
+   - Field: `userType` (String: "USER" or "ADMIN")
+   - Validation performed in controller layer
+
+3. **PagedResponse<T>.java**
+   - Generic pagination wrapper for any entity type
+   - Fields: content, page, pageSize, totalPages, totalElements
+   - Factory method: `fromPage(Page<T>)` converts Spring Data Page to custom format
+
+4. **ApiResponse<T>.java**
+   - Standardized API response format
+   - Success format: `{success: true, data: {...}}`
+   - Error format: `{success: false, error: {code: "ERROR_CODE", message: "..."}}`
+   - Factory methods: `success(T data)`, `error(String code, String message)`
+
+5. **SearchFilterDTO.java**
+   - Advanced search filter criteria
+   - Fields: column, value, operation (CONTAINS/NOT_CONTAINS)
+   - Supports: displayName, email, userType, firstLoginDate, lastLoginDate
+
+##### Repository Enhancements
+**UserRepository.java** - Added 5 new methods:
+
+```java
+// Extended JpaSpecificationExecutor for dynamic queries
+public interface UserRepository extends JpaRepository<User, Long>,
+                                      JpaSpecificationExecutor<User> {
+
+    // Optimized query with LEFT JOIN (avoids N+1 problem)
+    @Query("SELECT u, COUNT(p) FROM User u LEFT JOIN Photo p ON p.owner = u GROUP BY u.userId")
+    List<Object[]> findAllWithPhotoCounts(Pageable pageable);
+
+    // Quick search with photo counts
+    @Query("SELECT u, COUNT(p) FROM User u LEFT JOIN Photo p ON p.owner = u " +
+           "WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.displayName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "GROUP BY u.userId")
+    List<Object[]> searchUsersWithPhotoCounts(@Param("search") String search, Pageable pageable);
+
+    // Pagination support
+    @Query("SELECT COUNT(u) FROM User u")
+    long countAllUsers();
+
+    @Query("SELECT COUNT(u) FROM User u WHERE ...")
+    long countSearchResults(@Param("search") String search);
+}
+```
+
+**Performance Optimization:**
+- Uses LEFT JOIN with GROUP BY instead of N+1 queries
+- Single query fetches users with their photo counts
+- Reduces database round trips from N+1 to 1
+
+##### Service Layer
+**UserService.java** - Added 3 new methods:
+
+1. **getUsers(page, pageSize, sortBy, sortDir)**
+   - Returns paginated list of users with photo counts
+   - Uses `findAllWithPhotoCounts()` for optimal performance
+   - Supports sorting on any user field
+
+2. **searchUsers(searchTerm, page, pageSize, sortBy, sortDir)**
+   - Quick search by email or display name
+   - Case-insensitive LIKE query
+   - Returns users with photo counts
+
+3. **advancedSearchUsers(filters, page, pageSize, sortBy, sortDir)**
+   - Dynamic filtering with JPA Specifications
+   - Combines multiple filters with AND logic
+   - Supports: CONTAINS, NOT_CONTAINS operations
+   - Builds Specification from filter list
+
+**Helper Method:**
+```java
+private Specification<User> buildSpecification(List<SearchFilterDTO> filters) {
+    return (root, query, criteriaBuilder) -> {
+        // Dynamically builds predicates from filters
+        // Combines with AND logic
+        // Handles string, enum, and date fields
+    };
+}
+```
+
+##### Controller
+**UserController.java** - New REST controller:
+
+**GET /api/users**
+- Query params: page, pageSize, sortBy, sortDir, search (optional), filters (optional)
+- Returns: `ApiResponse<PagedResponse<UserDTO>>`
+- Authorization: Admin only (returns 403 if not admin)
+- Supports three modes:
+  1. All users (no search params)
+  2. Quick search (search param provided)
+  3. Advanced search (filters param provided)
+
+**PUT /api/users/{userId}**
+- Path param: userId
+- Request body: `{userType: "USER" | "ADMIN"}`
+- Returns: `ApiResponse<UserDTO>`
+- Authorization: Admin only
+- Validation: userType must be "USER" or "ADMIN"
+- Updates user type and returns updated user
+
+#### Frontend Components
+
+##### Service Layer
+**userService.js** (`src/services/userService.js`):
+```javascript
+getUsers(params) {
+    // params: page, pageSize, sortBy, sortDir, search, filters
+    // Returns: ApiResponse<PagedResponse<UserDTO>>
+}
+
+updateUserType(userId, userType) {
+    // Updates user type via PUT /api/users/{userId}
+    // Returns: ApiResponse<UserDTO>
+}
+```
+
+##### Reusable Components
+
+1. **PaginationControls** (`src/components/PaginationControls.js`)
+   - Props: currentPage, totalPages, onPageChange
+   - Features: First, Last, Previous, Next buttons
+   - Smart page display (shows 5 pages at a time)
+   - Hides when only 1 page exists
+
+2. **QuickSearch** (`src/components/QuickSearch.js`)
+   - Props: onSearch
+   - Simple text input for email/name search
+   - Clear button when search term exists
+   - Submits on Enter key
+
+3. **AdvancedSearch** (`src/components/AdvancedSearch.js`)
+   - Props: onSearch
+   - 3 filter rows (column, operation, value)
+   - Column dropdown: Email, Display Name, User Type, First/Last Login Date
+   - Operation dropdown: Contains, Not Contains
+   - Apply Filters and Clear All buttons
+
+4. **SearchControls** (`src/components/SearchControls.js`)
+   - Props: onQuickSearch, onAdvancedSearch
+   - Tabbed interface (Quick Search | Advanced Search)
+   - Integrates QuickSearch and AdvancedSearch
+   - Switches between search modes
+
+5. **UserTable** (`src/components/UserTable.js`)
+   - Props: users, onSortChange, onUserTypeChange, currentSort
+   - Features:
+     - Sortable columns (click header, shows ↑↓ icons)
+     - Inline user type editing (dropdown with Save/Cancel)
+     - "View Images" button (navigates to /photos/{userId})
+     - Color-coded badges (blue=USER, red=ADMIN)
+     - Formatted date display (e.g., "Nov 30, 2025, 2:30 PM")
+   - Actions: Edit (toggles dropdown), View Images
+
+##### Pages
+
+1. **Users** (`src/pages/Users.js`)
+   - Main user management page
+   - State management:
+     - Pagination: page, pageSize, totalPages, totalElements
+     - Sorting: sortBy, sortDir
+     - Search: searchMode (none/quick/advanced), quickSearchTerm, advancedFilters
+   - Effects:
+     - `useEffect` fetches users when dependencies change
+     - Auto-resets page to 0 on search/filter change
+   - Components used: SearchControls, UserTable, PaginationControls
+   - Error and loading states displayed
+
+2. **Photos** (`src/pages/Photos.js`)
+   - Placeholder for user photo management
+   - Receives userId from route param `/photos/:userId`
+   - Displays feature list for Step 7
+   - "Back to Users" button
+
+##### Routing Updates
+**App.js**:
+```javascript
+import Users from './pages/Users';
+import Photos from './pages/Photos';
+
+<Route path="/users" element={
+    <ProtectedRoute adminOnly={true}>
+        <Users />
+    </ProtectedRoute>
+} />
+
+<Route path="/photos/:userId" element={
+    <ProtectedRoute adminOnly={true}>
+        <Photos />
+    </ProtectedRoute>
+} />
+```
+
+##### Styling
+All components have dedicated CSS files with:
+- Consistent color scheme (primary green: #4CAF50)
+- Hover states and smooth transitions
+- Responsive design (flex/grid layouts)
+- Accessible button states (normal, hover, disabled)
+- Table styling (alternating rows, borders, shadows)
+
+### Design Patterns Used
+
+1. **DTO Pattern**
+   - Separates internal models from external API contracts
+   - Allows adding computed fields (photoCount)
+   - Hides sensitive data (googleId)
+
+2. **Repository Pattern with Specifications**
+   - `JpaSpecificationExecutor` for dynamic queries
+   - Type-safe query building
+   - Reusable filter logic
+
+3. **Optimized Query Pattern**
+   - LEFT JOIN with GROUP BY avoids N+1 problem
+   - Single query instead of 1 + N queries
+   - Significant performance improvement for large datasets
+
+4. **Component Composition**
+   - Small, focused components
+   - Props for communication
+   - Reusable across pages
+
+5. **Container/Presentational Pattern**
+   - Users.js (container): manages state, API calls
+   - UserTable.js (presentational): receives props, renders UI
+
+### Testing Status
+
+#### Compilation
+- Backend: ✅ BUILD SUCCESS (34 source files)
+- Frontend: ✅ Compiled successfully
+
+#### Unit Tests
+⚠️ **Database Configuration Required:**
+
+Tests fail with: `FATAL: password authentication failed for user "postgres"`
+
+**Solution:** Set environment variables:
+```bash
+export DB_USERNAME=your_postgres_username
+export DB_PASSWORD=your_postgres_password
+export OAUTH_CLIENT_ID=test-client-id
+export OAUTH_CLIENT_SECRET=test-client-secret
+```
+
+**Configuration Update:**
+- `application-test.properties` now uses fallback defaults
+- `${***REMOVED***}` and `${***REMOVED***}`
+- Requires `PhotoSortDataTest` database to exist
+
+### API Endpoints
+
+```
+GET  /api/users?page=0&pageSize=10&sortBy=email&sortDir=asc
+GET  /api/users?search=john
+GET  /api/users?filters=[{"column":"userType","value":"ADMIN","operation":"CONTAINS"}]
+PUT  /api/users/{userId}
+     Body: {"userType": "ADMIN"}
+```
+
+### Database Queries Generated
+
+**Without optimization (N+1 problem):**
+```sql
+SELECT * FROM users LIMIT 10;          -- 1 query
+SELECT COUNT(*) FROM photos WHERE owner_id = 1;  -- N queries
+SELECT COUNT(*) FROM photos WHERE owner_id = 2;
+...
+```
+
+**With optimization (single query):**
+```sql
+SELECT u.*, COUNT(p.photo_id) as photo_count
+FROM users u
+LEFT JOIN photos p ON p.owner_id = u.user_id
+GROUP BY u.user_id
+LIMIT 10;
+```
+
+### Security Considerations
+
+1. **Authorization**
+   - All endpoints check admin status
+   - Returns 403 Forbidden if non-admin
+   - Uses `CustomOAuth2User.isAdmin()` check
+
+2. **Input Validation**
+   - userType validated against enum
+   - SQL injection prevented by JPA (no raw SQL)
+   - Input sanitization in search (LIKE with parameters)
+
+3. **Data Exposure**
+   - UserDTO excludes sensitive googleId
+   - Only necessary fields exposed to frontend
+
+### Files Created/Modified
+
+**Backend (9 files):**
+- 5 new DTOs
+- 1 modified repository (added 5 methods)
+- 1 modified service (added 3 methods)
+- 1 new controller
+- 1 modified test properties
+
+**Frontend (17 files):**
+- 1 new service
+- 5 new components + CSS
+- 2 new pages + CSS
+- 1 modified App.js
+
+**Total: 27 files (21 new, 6 modified)**
+
+### Expectations
+
+**Backend:**
+- PostgreSQL with PhotoSortData and PhotoSortDataTest databases
+- Environment variables set for DB credentials
+- Spring Boot running on port 8080
+
+**Frontend:**
+- React development server on port 3000
+- Backend API accessible at http://localhost:8080
+- Valid admin user authenticated
+
+**Browser:**
+- Modern browser with ES6 support
+- JavaScript enabled
+- localStorage available
+
+### Known Limitations
+
+1. **Advanced Search Photo Count**
+   - Currently returns 0 for photo count in advanced search
+   - Comment in code suggests future optimization with batch query
+   - Quick search and all users view have accurate counts
+
+2. **Filter Encoding**
+   - Advanced filters sent as JSON string in query param
+   - Alternative: POST endpoint for complex searches
+   - Works but not ideal for large filter sets
+
+3. **No Export Functionality**
+   - Cannot export user list to CSV/Excel
+   - Future enhancement
+
+4. **No Bulk Operations**
+   - Can only edit one user at a time
+   - No bulk user type changes
+   - Future enhancement
+
+### Development Notes
+
+1. **Adding New DTOs:**
+   - Place in `com.photoSort.dto` package
+   - Use Lombok for getters/setters
+   - Add factory methods for conversions
+
+2. **Adding Repository Methods:**
+   - Use `@Query` for complex queries
+   - Extend `JpaSpecificationExecutor` for dynamic queries
+   - Always consider N+1 problem
+
+3. **Building Specifications:**
+   - Return `Specification<Entity>` lambda
+   - Use `criteriaBuilder` for predicates
+   - Combine with `and()`, `or()`, `not()`
+
+4. **Frontend State Management:**
+   - Use `useState` for component state
+   - Use `useEffect` for side effects (API calls)
+   - Reset page to 0 when search changes
+
+5. **API Error Handling:**
+   - Backend returns `ApiResponse` with error details
+   - Frontend shows error messages to user
+   - Check `response.success` before accessing `data`
+
+### Next Steps (Step 7)
+
+Replace Photos.js placeholder with:
+- Photo upload functionality
+- Photo list with thumbnails
+- Photo deletion
+- Photo metadata editing
+- Public/private toggle
