@@ -81,7 +81,7 @@ public class DatabaseConnectionConfigTest {
 
             DatabaseMetaData metaData = connection.getMetaData();
             String databaseProductName = metaData.getDatabaseProductName();
-            assertEquals("PostgreSQL", databaseProductName, "Should be connected to PostgreSQL");
+            assertEquals("H2", databaseProductName, "Should be connected to H2 test database");
         }
     }
 

@@ -1078,3 +1078,157 @@ Replace Photos.js placeholder with:
 - Photo deletion
 - Photo metadata editing
 - Public/private toggle
+---
+
+## Step 7: Photo Table Page
+
+### Functionality Created
+**Photo Management Interface with Permission-Based Viewing**
+
+Implemented complete photo viewing system with permission-based filtering, search/pagination, admin capabilities, and reusable generic table components.
+
+### Components Created
+
+**Backend**:
+- `PhotoDTO.java` - Data Transfer Object for photos
+- `ColumnPreferenceDTO.java` - DTO for user column customization  
+- `PhotoService.java` - Business logic with JPA Criteria API queries
+- `PhotoController.java` - REST endpoints with permission handling
+- Enhanced `UserController.java` with column preference endpoints
+- `PhotoTablePageTest.java` - 10 comprehensive integration tests
+
+**Frontend**:
+- `photoService.js` - API client for photo operations
+- `PhotoTable.js` - Photo table using generic DataTable component
+- `PhotoTable.css` - Styling for photo display
+- `Photos.js` - Main page using useTableData hook
+
+**Generic/Reusable** (eliminating code duplication):
+- `useTableData.js` - Custom hook for table state management
+- `DataTable.js` - Generic sortable table component  
+- `TablePage.js` - Page wrapper component
+
+### Permission-Based Filtering Logic
+
+Users can see three types of photos:
+1. **Owned photos**: Current user is the owner
+2. **Public photos**: isPublic = true
+3. **Granted access**: PhotoPermission record exists
+
+Implemented in `PhotoService.getPhotosForUser()` using JPA Criteria API predicates.
+
+**Critical Implementation Note**: Predicates must be rebuilt for each query (main and count) to avoid Hibernate error "Already registered a copy".
+
+Admins use separate method `getPhotosForAdmin()` with no permission restrictions.
+
+### Authentication Handling
+
+`PhotoController` uses `SecurityContextHolder` to support both OAuth2User (production) and @WithMockUser (testing):
+
+```java
+Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+if (auth.getPrincipal() instanceof OAuth2User) {
+    userEmail = oauth2User.getAttribute("email");
+} else {
+    userEmail = auth.getName(); // @WithMockUser
+}
+```
+
+### API Endpoints
+
+**GET /api/photos** - List photos with permission filtering
+- Query params: page, size, sort, direction, search, userId (admin), filter fields
+- Returns: `ApiResponse<PagedResponse<PhotoDTO>>`
+
+**GET /api/users/{userId}/columns** - Get column preferences
+- Returns defaults if user has no preferences
+- Returns: `ApiResponse<List<ColumnPreferenceDTO>>`
+
+**PUT /api/users/{userId}/columns** - Save column preferences
+- Body: `List<ColumnPreferenceDTO>`
+- Returns: `ApiResponse<String>`
+
+### Generic Component Architecture
+
+Created reusable table infrastructure used by both Users and Photos pages:
+
+**useTableData Hook**:
+- Manages pagination, sorting, search state
+- Handles API calls with loading/error states
+- Parameters: `(fetchFunction, initialSort, initialPageSize)`
+- Returns: data, loading, error, handlers, pagination state
+
+**DataTable Component**:
+- Configurable columns with optional custom renderers
+- Built-in sorting UI with visual feedback
+- Action buttons per row via render prop
+- Props: data, columns, onSort, currentSort, renderActions, keyField
+
+**Column Configuration Example**:
+```javascript
+{
+  field: 'fileName',
+  header: 'File Name',
+  sortable: true,
+  render: (row, value) => <span>{value}</span>  // Optional
+}
+```
+
+### Testing Strategy
+
+**PhotoTablePageTest.java** (10 integration tests):
+1. User sees only authorized photos (owned + public + granted)
+2. Admin sees all photos
+3. Admin filters by specific user
+4. Custom columns API returns user preferences
+5. Default columns for new users
+6. Column sorting (ascending/descending)
+7. Pagination (multiple pages, correct counts)
+8. Quick search (fileName, filePath)
+9. Public photos visible to all users
+10. Advanced search with multiple filters
+
+Uses `@SpringBootTest`, `@AutoConfigureMockMvc`, `@WithMockUser`, `@Transactional`.
+
+### Development Notes
+
+**JPA Criteria API - Critical Gotcha**:
+Never reuse Predicate objects between queries. Always rebuild predicates for main and count queries separately. Violating this causes "Already registered a copy" Hibernate error.
+
+**Creating Generic Components**:
+1. Identify common patterns across components
+2. Extract to configurable generic component
+3. Use props for customization (columns, data, callbacks)
+4. Keep it simple - avoid over-abstraction
+
+**Adding Photo Filters**:
+1. Add query parameter to PhotoController.getPhotos()
+2. Pass to PhotoService methods
+3. Add predicate building logic
+4. Update frontend photoService.js
+
+**Authentication in Tests**:
+- Use `@WithMockUser(username = "email@example.com")`
+- Create matching user in @BeforeEach setup with that email
+- SecurityContextHolder handles both OAuth2 and mock authentication
+
+### Limitations
+
+1. **No Photo Upload** - Photos added directly to database only
+2. **No Thumbnail Generation** - Assumes pre-existing thumbnails
+3. **No Column Customization UI** - Backend ready, frontend not implemented
+4. **No Permission Management** - Can't grant/revoke access via UI
+5. **Limited Advanced Filters** - Maximum 2 filters (easily expandable)
+6. **No Photo Editing** - View-only (no delete, metadata edit, visibility toggle)
+
+### Next Steps (Step 8+)
+
+Future enhancements:
+- Photo upload with automatic thumbnail generation
+- Photo deletion and batch operations
+- Metadata editing interface
+- Public/private visibility toggle
+- Permission management UI
+- Column customization interface
+- EXIF data extraction and display
+- Photo tagging and categorization

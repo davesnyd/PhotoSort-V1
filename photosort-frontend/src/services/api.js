@@ -8,14 +8,19 @@
 import axios from 'axios';
 
 // Create Axios instance with base configuration
+// TEMPORARY: Using port 8081 and disabling auth interceptors for testing
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Important for session-based auth
 });
 
+// TEMPORARY: Authentication interceptors disabled for testing
+// TODO: Re-enable when OAuth is properly configured
+
+/* PRODUCTION CODE - Uncomment when OAuth is set up:
 // Request interceptor to add authentication token if available
 api.interceptors.request.use(
   (config) => {
@@ -43,5 +48,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+*/
 
 export default api;

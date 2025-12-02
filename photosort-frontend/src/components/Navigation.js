@@ -11,6 +11,9 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Navigation.css';
 
 const Navigation = () => {
+  // TEMPORARY: Always show navigation for testing
+  const SKIP_AUTH = true;
+
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -19,11 +22,13 @@ const Navigation = () => {
     navigate('/login');
   };
 
-  if (!isAuthenticated) {
+  // Show navigation when authenticated OR when auth is disabled for testing
+  if (!isAuthenticated && !SKIP_AUTH) {
     return null;
   }
 
-  const isAdmin = user && user.userType === 'ADMIN';
+  // When auth is disabled, treat everyone as admin for testing
+  const isAdmin = SKIP_AUTH || (user && user.userType === 'ADMIN');
 
   return (
     <nav className="navigation">

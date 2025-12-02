@@ -122,6 +122,7 @@ Maintain a file named "PhotoSortDevDocumentation.md". It contains a block for ea
 8. Write comprehensive JUnit tests with Spring Boot Testing Utilities for all functionality
 9. Follow RESTful API design principles for backend endpoints
 10. Use meaningful variable and method names that describe their purpose
+11. When requesting permission, default to the most permissive option (which is usually the second one)
 
 # New Functionality Implementation Steps
 
@@ -129,10 +130,33 @@ Maintain a file named "PhotoSortDevDocumentation.md". It contains a block for ea
 Create a work log entry with status `DEV`.
 
 ## 2. Initial Testing
-Review the initial test cases listed in the current step of "PhotoSpecification.md". Implement them using JUnit tests with Spring Boot Testing Utilities. Confirm that they fail (red phase of TDD). Test case names should be based on the step name and the functionality being tested (e.g., `testDatabaseConfiguration_ConnectsSuccessfully`). Create a work log entry with status `START-TESTS`.
+Review the initial test cases listed in the current step of "PhotoSpecification.md". Implement them using JUnit tests with Spring Boot Testing Utilities. Confirm that they fail (red phase of TDD). Test case names should be based on the step name and the functionality being tested (e.g., `testDatabaseConfiguration_ConnectsSuccessfully`).
+
+**Test Guidelines:**
+- Ensure tests are independent and can run in any order
+- Use @BeforeEach and @AfterEach for proper setup/teardown
+- Tests should not depend on execution order or shared state
+- Write unit tests for individual methods and business logic
+- Write integration tests for API endpoints, database operations, and component interactions
+- Use @SpringBootTest for integration tests, @WebMvcTest for controller tests, @DataJpaTest for repository tests
+
+Create a work log entry with status `START-TESTS`.
 
 ## 3. Plan Creation
+**CRITICAL: Before creating the plan, thoroughly review the existing codebase for reuse opportunities.**
+
+**Code Reuse Requirements:**
+1. Search for similar functionality already implemented
+2. Identify patterns that could be extracted into reusable components/services
+3. Look for duplicate code that should be refactored into shared utilities
+4. Consider creating generic components rather than specific implementations
+5. Review existing services, hooks, and utilities that could be extended
+6. Apply DRY (Don't Repeat Yourself) principle rigorously
+
+**Planning Process:**
 Format a detailed implementation plan including:
+- **Code Reuse Analysis**: List existing components/code that can be reused or require refactoring
+- **Refactoring Requirements**: Identify code that should be made generic/reusable as part of this step
 - Components to be created or modified
 - API endpoints or UI components needed
 - Database schema changes (if any)
@@ -141,9 +165,12 @@ Format a detailed implementation plan including:
 For **major features or complex changes**, start a separate code-reviewer agent using the Task tool to:
 - Review the plan for correctness
 - Check for potential conflicts with existing functionality
+- Identify additional reuse opportunities
 - Suggest improvements
 
 Incorporate suggested improvements into the plan. Consult with the user, describe the plan, highlight any foreseen problems, and receive authorization to proceed. Create a work log entry with status `PLAN-CREATE`.
+
+Create and write a TODO list so that you know where to continue programming if you need to stop.
 
 ## 4. Plan Implementation
 Implement the plan following the general programming approaches.
@@ -167,19 +194,46 @@ Review the functionality created and determine additional test cases beyond the 
 Create a work log entry with status `TESTS-AUGMENTED`.
 
 ## 6. Current Test Cases
-Run the test cases that can be executed with the current development level. Fix any bugs that occur and proceed iteratively until all current test cases succeed. Create a work log entry with status `CURRENT-TESTS`.
+Run the test cases that can be executed with the current development level. **You MUST complete a full test-fix-iteration cycle before proceeding.** This means:
+
+1. Run `mvn test` to execute all current test cases
+2. If any tests fail:
+   - Analyze the failure
+   - Fix the bug
+   - Run `mvn test` again
+   - Repeat until ALL tests pass
+3. Do NOT move to the next step until you see "BUILD SUCCESS" and "Failures: 0, Errors: 0"
+4. Show the user the final test results output (pass counts, execution time)
+5. Only after all tests pass, create a work log entry with status `CURRENT-TESTS`
 
 Update "Learnings.md" with any insights gained during debugging.
 
-**If tests repeatedly fail:**
+**If tests fail after 2-3 fix iterations:**
 - Document the issue in Learnings.md
-- Consider using the AskUserQuestion tool to get guidance
+- Show the user the failing test output
+- Use the AskUserQuestion tool to get guidance on approach
 - May need to rollback and revise the plan (see Rollback Procedure below)
 
 ## 7. All Test Cases
-Run all previous test cases for existing functionality, plus any previous tests that couldn't be run earlier due to missing dependencies but are now runnable. Fix any bugs that occur and proceed iteratively until all test cases (previous and current) succeed. Create a work log entry with status `ALL-TESTS`.
+Run all previous test cases for existing functionality, plus any previous tests that couldn't be run earlier due to missing dependencies but are now runnable. **You MUST complete a full test-fix-iteration cycle before proceeding.** This means:
+
+1. Run `mvn test` to execute ALL test cases (previous and current)
+2. If any tests fail:
+   - Analyze the failure
+   - Fix the bug (may be a regression in existing functionality)
+   - Run `mvn test` again
+   - Repeat until ALL tests pass
+3. Do NOT move to the next step until you see "BUILD SUCCESS" and "Failures: 0, Errors: 0"
+4. Show the user the final test results output (pass counts, execution time)
+5. Only after all tests pass, create a work log entry with status `ALL-TESTS`
 
 Update "Learnings.md" with any insights gained during regression testing.
+
+**If tests fail after 2-3 fix iterations:**
+- Document the issue in Learnings.md
+- Show the user the failing test output
+- Use the AskUserQuestion tool to get guidance on approach
+- May need to rollback and revise the plan (see Rollback Procedure below)
 
 ## 8. Documentation
 Create comprehensive documentation:
@@ -217,7 +271,8 @@ If implementation encounters blocking issues:
 
 1. Read the "WorkLog.csv" file to determine where to continue working (check the most recent entry)
 2. Read the "PhotoSpecification.md" file to understand the current step's requirements
-3. Continue from where you left off based on the last status in WorkLog.csv:
+3. Read the "Learnings.md" file to refresh memory about how to improve development moving forward
+4. Continue from where you left off based on the last status in WorkLog.csv:
    - `DEV` → Proceed to step 2 (Initial Testing)
    - `START-TESTS` → Proceed to step 3 (Plan Creation)
    - `PLAN-CREATE` → Proceed to step 4 (Plan Implementation)
@@ -226,5 +281,6 @@ If implementation encounters blocking issues:
    - `CURRENT-TESTS` → Proceed to step 7 (All Test Cases)
    - `ALL-TESTS` → Proceed to step 8 (Documentation)
    - `DOCS` → Move to next step in PhotoSpecification.md
+5. Read the TODO file to refresh memory about what the next steps are
 
 

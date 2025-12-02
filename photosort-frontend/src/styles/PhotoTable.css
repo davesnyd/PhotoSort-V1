@@ -1,0 +1,60 @@
+/**
+ * PhotoTable Styles
+ * Copyright 2025, David Snyderman
+ *
+ * Styling for photo table component
+ * Colors: Navy (#000080), Burgundy (#800020), Cream (#FFFDD0)
+ */
+
+/* Thumbnail styling */
+.photo-thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 2px solid #000080; /* Navy border */
+}
+
+.no-thumbnail {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  color: #666;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Visibility badge styling */
+.visibility-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.visibility-badge.public {
+  background-color: #4caf50;
+  color: white;
+}
+
+.visibility-badge.private {
+  background-color: #800020; /* Burgundy */
+  color: white;
+}
+
+/* Action button styling (inherits from DataTable but can be customized) */
+.action-btn.view-btn {
+  background-color: #000080; /* Navy */
+  color: white;
+}
+
+.action-btn.view-btn:hover {
+  background-color: #000066; /* Darker navy */
+}

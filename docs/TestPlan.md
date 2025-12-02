@@ -256,3 +256,177 @@ This document outlines manual and automated test cases for the PhotoSort applica
    - Make POST request with valid CSRF token
    - Verify request accepted
 4. **Expected Outcome**: CSRF protection enforced correctly
+
+---
+
+## Step 7: Photo Table Page
+
+### Test Case: User Views Authorized Photos
+1. **Name**: Regular User Permission Filtering
+2. **Functionality Tested**: Users can only see photos they own, public photos, or photos they have explicit permission for
+3. **Steps Required**:
+   - Login as regular user (USER type)
+   - Click "My Photos" in navigation
+   - Observe photos displayed
+   - Verify table shows photo details (thumbnail, name, size, dimensions, created date, owner, public/private status)
+4. **Expected Outcome**: 
+   - User sees their own photos
+   - User sees public photos from other users
+   - User sees private photos they've been granted access to
+   - User does NOT see private photos they don't have access to
+
+### Test Case: Admin Views All Photos
+1. **Name**: Administrator Full Access
+2. **Functionality Tested**: Administrators can see all photos regardless of ownership or permissions
+3. **Steps Required**:
+   - Login as administrator (ADMIN type)
+   - Click "Photos" in admin navigation
+   - Observe all photos displayed
+   - Verify photos from multiple users are visible
+4. **Expected Outcome**: All photos in the system are displayed, including private photos from other users
+
+### Test Case: Photo Quick Search
+1. **Name**: Search Photos by Filename or Path
+2. **Functionality Tested**: Quick search filters photos by matching text in filename or file path
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Enter search term in quick search field (e.g., "vacation")
+   - Click Search button
+   - Observe filtered results
+4. **Expected Outcome**: Only photos with "vacation" in filename or path are displayed
+
+### Test Case: Photo Advanced Search
+1. **Name**: Multi-Filter Photo Search
+2. **Functionality Tested**: Advanced search with multiple filter conditions
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Click Advanced Search
+   - Set Filter 1: Field = "fileName", Type = "Must Contain", Value = "beach"
+   - Set Filter 2: Field = "fileName", Type = "Must Not Contain", Value = "2023"
+   - Click Search
+4. **Expected Outcome**: Only photos with "beach" in filename but NOT containing "2023" are shown
+
+### Test Case: Photo Table Sorting
+1. **Name**: Sort Photos by Column
+2. **Functionality Tested**: Clicking column headers sorts photos
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Click "File Name" column header
+   - Observe photos sorted alphabetically ascending
+   - Click "File Name" header again
+   - Observe photos sorted alphabetically descending
+   - Try sorting by other columns (Size, Created, Owner)
+4. **Expected Outcome**: Photos sort correctly by selected column, toggles between ascending/descending
+
+### Test Case: Photo Pagination
+1. **Name**: Navigate Through Pages of Photos
+2. **Functionality Tested**: Pagination controls work correctly
+3. **Steps Required**:
+   - Navigate to Photos page (assuming >10 photos exist)
+   - Observe 10 photos displayed on page 1
+   - Note total pages and total photos count
+   - Click "Next" button
+   - Observe next 10 photos displayed
+   - Click "Previous" button
+   - Click specific page number
+4. **Expected Outcome**: 
+   - 10 photos per page
+   - Pagination controls navigate correctly
+   - Total counts are accurate
+
+### Test Case: View Full-Size Photo
+1. **Name**: Open Photo in New Tab
+2. **Functionality Tested**: View button opens full-size image
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Find a photo in the table
+   - Click "View" button for that photo
+   - Observe new browser tab opens
+4. **Expected Outcome**: Full-size image opens in new tab, original quality preserved
+
+### Test Case: Photo Thumbnail Display
+1. **Name**: Thumbnail Preview in Table
+2. **Functionality Tested**: Thumbnails display correctly or show placeholder
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Observe Thumbnail column
+   - Verify thumbnails load for photos with valid paths
+   - Verify "No Image" placeholder for photos without thumbnails
+4. **Expected Outcome**: Thumbnails display at 80x80 pixels, broken images show "No Image" placeholder
+
+### Test Case: Public vs Private Badge
+1. **Name**: Visibility Status Display
+2. **Functionality Tested**: Public/Private badge shows photo visibility
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Observe "Public" column
+   - Verify public photos have green "Public" badge
+   - Verify private photos have burgundy "Private" badge
+4. **Expected Outcome**: Badges correctly reflect photo visibility settings
+
+### Test Case: Admin Filter by User
+1. **Name**: Administrator View User's Photos
+2. **Functionality Tested**: Admin can filter photos by specific user
+3. **Steps Required**:
+   - Login as administrator
+   - Navigate to Users page
+   - Find a user in the table
+   - Click "View Images" button for that user
+   - Observe Photos page opens filtered for that user
+4. **Expected Outcome**: Only photos owned by selected user are displayed
+
+### Test Case: File Size Formatting
+1. **Name**: Human-Readable File Sizes
+2. **Functionality Tested**: File sizes display in appropriate units
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Observe "Size" column
+   - Check photos of varying sizes
+4. **Expected Outcome**: 
+   - Small files show in KB (e.g., "123.4 KB")
+   - Medium files show in MB (e.g., "5.2 MB")
+   - Large files show in GB (e.g., "1.3 GB")
+
+### Test Case: Photo Owner Display
+1. **Name**: Owner Information Shown
+2. **Functionality Tested**: Each photo shows owner's display name
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Observe "Owner" column
+   - Verify owner names are displayed
+4. **Expected Outcome**: Each photo shows the display name of the user who owns it
+
+### Test Case: Date Formatting
+1. **Name**: Created Date Display
+2. **Functionality Tested**: File creation dates formatted for readability
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Observe "Created" column
+   - Check date format
+4. **Expected Outcome**: Dates display in format like "Nov 30, 2024, 02:30 PM"
+
+### Test Case: Empty State
+1. **Name**: No Photos Available Message
+2. **Functionality Tested**: Appropriate message when no photos match criteria
+3. **Steps Required**:
+   - Login as new user with no photos
+   - Navigate to Photos page
+   - OR: Perform search with no matching results
+4. **Expected Outcome**: "No photos found" message displayed
+
+### Test Case: Loading State
+1. **Name**: Loading Indicator During API Call
+2. **Functionality Tested**: Loading message shows while fetching photos
+3. **Steps Required**:
+   - Navigate to Photos page
+   - Observe briefly before photos load
+4. **Expected Outcome**: "Loading photos..." message appears, then photos display once loaded
+
+### Test Case: Error Handling
+1. **Name**: API Error Display
+2. **Functionality Tested**: Error messages shown on API failures
+3. **Steps Required**:
+   - Stop backend server
+   - Navigate to Photos page or perform search
+   - Observe error handling
+4. **Expected Outcome**: User-friendly error message displayed (not raw error)

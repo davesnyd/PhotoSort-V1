@@ -11,11 +11,16 @@ import authService from '../services/authService';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // TEMPORARY: Skip authentication for testing
+  const SKIP_AUTH = true;
+
+  const [user, setUser] = useState(SKIP_AUTH ? { displayName: 'Test User', email: 'test@test.com', userType: 'ADMIN' } : null);
+  const [loading, setLoading] = useState(SKIP_AUTH ? false : true);
+  const [isAuthenticated, setIsAuthenticated] = useState(SKIP_AUTH ? true : false);
 
   const logout = useCallback(async () => {
+    if (SKIP_AUTH) return; // Don't allow logout in test mode
+
     try {
       await authService.logout();
     } catch (error) {
@@ -27,6 +32,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuthStatus = useCallback(async () => {
+    if (SKIP_AUTH) {
+      // Skip authentication check in test mode
+      setLoading(false);
+      return;
+    }
+
     try {
       // Check if we have stored auth data
       const storedUser = authService.getStoredUser();

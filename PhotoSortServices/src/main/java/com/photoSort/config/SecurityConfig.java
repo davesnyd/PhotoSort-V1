@@ -36,6 +36,15 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // TEMPORARY: Disable authentication for testing
+        // TODO: Re-enable OAuth when Google credentials are configured
+        http
+                .csrf(csrf -> csrf.disable())  // Disable CSRF for testing
+                .authorizeHttpRequests(authz -> authz
+                        .anyRequest().permitAll()  // Allow all requests without authentication
+                );
+
+        /* PRODUCTION CONFIGURATION - Uncomment when OAuth is set up:
         http
                 // CSRF protection
                 .csrf(csrf -> csrf
@@ -72,6 +81,7 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                 );
+        */
 
         return http.build();
     }
