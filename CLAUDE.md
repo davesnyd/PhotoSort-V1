@@ -1,6 +1,15 @@
 # Overview
 Create the application in an iterative fashion. The specification is in "PhotoSpecification.md". Implement one step at a time. Each step in the specification includes: Number, name, description, components involved, and list of initial test cases.
 
+## Important Note on Frontend Testing
+**Effective Date**: 2025-12-02 (Step 7 onwards)
+
+Starting with Step 7, all new frontend components, hooks, and pages MUST have automated tests using Jest + React Testing Library. This matches the rigor applied to backend testing.
+
+**Retroactive Application**: Steps 5-6 do not yet have frontend automated tests. See `docs/FrontendTestingPlan.md` for a detailed plan to add tests retroactively. This can be done as a separate task or gradually as those components are modified.
+
+**Going Forward**: All new frontend functionality must include automated tests from the start (TDD approach).
+
 # Quick Reference
 
 ## Project Structure
@@ -27,10 +36,22 @@ photoSort/
 - **React**: Latest stable version
 
 ## Common Commands
+
+**Backend (Java/Maven)**:
 ```bash
 mvn clean install      # Build the project
-mvn test              # Run all tests
+mvn test              # Run all backend tests
 mvn spring-boot:run   # Run the application
+```
+
+**Frontend (React/npm)**:
+```bash
+cd photosort-frontend
+npm install                                    # Install dependencies
+npm start                                      # Start development server
+npm test                                       # Run tests in watch mode
+npm test -- --coverage --watchAll=false       # Run tests with coverage
+npm run build                                  # Build for production
 ```
 
 # Files Written by Claude
@@ -119,10 +140,11 @@ Maintain a file named "PhotoSortDevDocumentation.md". It contains a block for ea
 5. Programming in the backend will be in **Java** using the **Spring Boot** framework
 6. Programming in the frontend will be in **JavaScript** using the **React** framework
 7. Build using **Maven**
-8. Write comprehensive JUnit tests with Spring Boot Testing Utilities for all functionality
-9. Follow RESTful API design principles for backend endpoints
-10. Use meaningful variable and method names that describe their purpose
-11. When requesting permission, default to the most permissive option (which is usually the second one)
+8. Write comprehensive JUnit tests with Spring Boot Testing Utilities for all backend functionality
+9. Write comprehensive automated tests with Jest + React Testing Library for all frontend functionality
+10. Follow RESTful API design principles for backend endpoints
+11. Use meaningful variable and method names that describe their purpose
+12. When requesting permission, default to the most permissive option (which is usually the second one)
 
 # New Functionality Implementation Steps
 
@@ -130,15 +152,61 @@ Maintain a file named "PhotoSortDevDocumentation.md". It contains a block for ea
 Create a work log entry with status `DEV`.
 
 ## 2. Initial Testing
-Review the initial test cases listed in the current step of "PhotoSpecification.md". Implement them using JUnit tests with Spring Boot Testing Utilities. Confirm that they fail (red phase of TDD). Test case names should be based on the step name and the functionality being tested (e.g., `testDatabaseConfiguration_ConnectsSuccessfully`).
+Review the initial test cases listed in the current step of "PhotoSpecification.md". Implement tests for both backend and frontend. Confirm that they fail (red phase of TDD).
 
-**Test Guidelines:**
+### Backend Testing (JUnit + Spring Boot)
+Implement tests using JUnit with Spring Boot Testing Utilities. Test case names should be based on the step name and functionality (e.g., `testDatabaseConfiguration_ConnectsSuccessfully`).
+
+**Backend Test Guidelines:**
 - Ensure tests are independent and can run in any order
 - Use @BeforeEach and @AfterEach for proper setup/teardown
 - Tests should not depend on execution order or shared state
 - Write unit tests for individual methods and business logic
 - Write integration tests for API endpoints, database operations, and component interactions
 - Use @SpringBootTest for integration tests, @WebMvcTest for controller tests, @DataJpaTest for repository tests
+
+**Run backend tests**: `mvn test`
+
+### Frontend Testing (Jest + React Testing Library)
+For any new React components, hooks, or pages, create corresponding `.test.js` files.
+
+**Frontend Test Requirements:**
+- **Required for**: New custom hooks, generic/reusable components, page components
+- **Optional for**: Simple presentational components with no logic
+- **Coverage goals**: 80%+ for hooks and generic components, 70%+ for pages
+
+**Frontend Test Guidelines:**
+- Create test file alongside component: `ComponentName.test.js`
+- Test component renders correctly with valid props
+- Test user interactions (clicks, typing, form submissions)
+- Test error states and edge cases (null/undefined props, empty data)
+- Mock API calls using Jest mocks
+- Use `renderWithProviders()` utility for components needing Router/Context
+
+**Test Structure Example:**
+```javascript
+import { render, screen, fireEvent } from '@testing-library/react';
+import UserTable from './UserTable';
+
+describe('UserTable', () => {
+  it('renders user data correctly', () => {
+    const mockUsers = [{ userId: 1, email: 'test@example.com' }];
+    render(<UserTable users={mockUsers} />);
+    expect(screen.getByText('test@example.com')).toBeInTheDocument();
+  });
+});
+```
+
+**Run frontend tests**: `cd photosort-frontend && npm test`
+
+**Run with coverage**: `npm test -- --coverage --watchAll=false`
+
+### Test Setup (First Time Only)
+If this is the first frontend test for the project:
+1. Install dependencies: `npm install --save-dev @testing-library/react @testing-library/jest-dom @testing-library/user-event @testing-library/hooks`
+2. Create `src/test-utils/` directory for shared test utilities
+3. Create mock data file: `src/test-utils/mockData.js`
+4. See `docs/FrontendTestingPlan.md` for detailed setup instructions
 
 Create a work log entry with status `START-TESTS`.
 
@@ -185,26 +253,58 @@ Implement suggested changes. Create a work log entry with status `PLAN-IMPLEMENT
 Update "PhotoSpecification.md" to reflect any changes made during implementation. Update "Learnings.md" with any insights that would improve future development.
 
 ## 5. Test Case Augmentation
-Review the functionality created and determine additional test cases beyond the initial ones. As much as possible, all functionality should be tested in an automated fashion using JUnit. Consider:
-- Edge cases
-- Error conditions
-- Integration points
-- Performance scenarios
+Review the functionality created and determine additional test cases beyond the initial ones. All functionality should be tested in an automated fashion.
+
+### Backend Test Augmentation (JUnit)
+Add tests for:
+- Edge cases (null values, empty collections, boundary conditions)
+- Error conditions (invalid input, constraint violations, exceptions)
+- Integration points (API endpoints, database operations, service interactions)
+- Performance scenarios (large datasets, concurrent operations)
+
+### Frontend Test Augmentation (Jest + React Testing Library)
+Add tests for:
+- **Edge cases**: Empty data arrays, null/undefined props, missing required props
+- **Error conditions**: API failures, validation errors, network timeouts
+- **User interactions**: All clickable elements, form submissions, keyboard navigation
+- **State management**: Loading states, error states, data updates
+- **Accessibility**: ARIA labels, keyboard focus, screen reader support
+
+**Coverage Check**: Run `npm test -- --coverage --watchAll=false` and ensure:
+- Hooks and generic components: 80%+ coverage
+- Page components: 70%+ coverage
+- Overall: 70%+ coverage
 
 Create a work log entry with status `TESTS-AUGMENTED`.
 
 ## 6. Current Test Cases
-Run the test cases that can be executed with the current development level. **You MUST complete a full test-fix-iteration cycle before proceeding.** This means:
+Run the test cases that can be executed with the current development level. **You MUST complete a full test-fix-iteration cycle for BOTH backend and frontend before proceeding.**
 
+### Backend Test Cycle
 1. Run `mvn test` to execute all current test cases
 2. If any tests fail:
    - Analyze the failure
    - Fix the bug
    - Run `mvn test` again
    - Repeat until ALL tests pass
-3. Do NOT move to the next step until you see "BUILD SUCCESS" and "Failures: 0, Errors: 0"
+3. Do NOT move forward until you see "BUILD SUCCESS" and "Failures: 0, Errors: 0"
 4. Show the user the final test results output (pass counts, execution time)
-5. Only after all tests pass, create a work log entry with status `CURRENT-TESTS`
+
+### Frontend Test Cycle
+1. Run `cd photosort-frontend && npm test -- --coverage --watchAll=false`
+2. If any tests fail:
+   - Analyze the failure
+   - Fix the bug or test
+   - Run tests again
+   - Repeat until ALL tests pass
+3. Verify coverage meets minimum thresholds (80%+ for hooks/generic components, 70%+ overall)
+4. Show the user the final test results and coverage summary
+
+### Verification Build
+5. Run `npm run build` to ensure frontend compiles without errors
+6. Verify no new warnings or errors introduced
+
+Only after all backend tests pass AND all frontend tests pass, create a work log entry with status `CURRENT-TESTS`.
 
 Update "Learnings.md" with any insights gained during debugging.
 
@@ -215,17 +315,33 @@ Update "Learnings.md" with any insights gained during debugging.
 - May need to rollback and revise the plan (see Rollback Procedure below)
 
 ## 7. All Test Cases
-Run all previous test cases for existing functionality, plus any previous tests that couldn't be run earlier due to missing dependencies but are now runnable. **You MUST complete a full test-fix-iteration cycle before proceeding.** This means:
+Run all previous test cases for existing functionality, plus any previous tests that couldn't be run earlier due to missing dependencies but are now runnable. **You MUST complete a full test-fix-iteration cycle for BOTH backend and frontend before proceeding.**
 
+### Backend Regression Testing
 1. Run `mvn test` to execute ALL test cases (previous and current)
 2. If any tests fail:
    - Analyze the failure
    - Fix the bug (may be a regression in existing functionality)
    - Run `mvn test` again
    - Repeat until ALL tests pass
-3. Do NOT move to the next step until you see "BUILD SUCCESS" and "Failures: 0, Errors: 0"
-4. Show the user the final test results output (pass counts, execution time)
-5. Only after all tests pass, create a work log entry with status `ALL-TESTS`
+3. Do NOT move forward until you see "BUILD SUCCESS" and "Failures: 0, Errors: 0"
+4. Show the user the final test results output (total test count, pass counts, execution time)
+
+### Frontend Regression Testing
+1. Run `cd photosort-frontend && npm test -- --coverage --watchAll=false`
+2. If any tests fail:
+   - Analyze the failure
+   - Fix the bug or test (may be a regression)
+   - Run tests again
+   - Repeat until ALL tests pass
+3. Verify coverage still meets minimum thresholds
+4. Show the user the final test results and coverage summary
+
+### Verification Build
+5. Run `npm run build` to ensure frontend still compiles without errors
+6. Verify no regressions in build process
+
+Only after all backend tests pass AND all frontend tests pass, create a work log entry with status `ALL-TESTS`.
 
 Update "Learnings.md" with any insights gained during regression testing.
 
