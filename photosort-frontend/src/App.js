@@ -16,6 +16,7 @@ import OAuthCallback from './pages/OAuthCallback';
 import Home from './pages/Home';
 import Users from './pages/Users';
 import Photos from './pages/Photos';
+import ImageDisplay from './pages/ImageDisplay';
 import './App.css';
 
 // Create a client for React Query
@@ -77,6 +78,15 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <Photos />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/photo/:photoId"
+                element={
+                  <ProtectedRoute>
+                    <ImageDisplay />
                   </ProtectedRoute>
                 }
               />

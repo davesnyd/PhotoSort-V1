@@ -137,6 +137,59 @@ const photoService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * Get complete photo details including EXIF, metadata, and tags
+   * @param {number} photoId Photo ID
+   * @returns {Promise} Photo detail object
+   */
+  getPhotoDetail: async (photoId) => {
+    try {
+      const response = await api.get(`/api/photos/${photoId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get photo image URL
+   * @param {number} photoId Photo ID
+   * @returns {string} Image URL
+   */
+  getPhotoImageUrl: (photoId) => {
+    return `/api/photos/${photoId}/image`;
+  },
+
+  /**
+   * Update photo custom metadata
+   * @param {number} photoId Photo ID
+   * @param {Array} metadata Array of {fieldName, metadataValue} objects
+   * @returns {Promise} Success response
+   */
+  updatePhotoMetadata: async (photoId, metadata) => {
+    try {
+      const response = await api.put(`/api/photos/${photoId}/metadata`, metadata);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Update photo tags
+   * @param {number} photoId Photo ID
+   * @param {Array<string>} tags Array of tag values
+   * @returns {Promise} Success response
+   */
+  updatePhotoTags: async (photoId, tags) => {
+    try {
+      const response = await api.put(`/api/photos/${photoId}/tags`, tags);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 
