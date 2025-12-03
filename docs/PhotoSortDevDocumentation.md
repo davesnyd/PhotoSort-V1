@@ -1614,3 +1614,130 @@ Key architectural pattern: Client-side pagination wrapper adapts simple list API
 - runTime/Periodicity validation  
 - Script engine reload trigger
 - Syntax highlighting for script contents
+
+---
+
+## Step 12: Edit Script Dialog (Admin Only)
+
+**Completed**: 2025-12-03
+
+### Functionality Created
+
+Dialog component for creating and editing automated scripts. Provides a form-based interface for managing script metadata, scheduling configuration, and script contents.
+
+### Implementation
+
+**Frontend Components**:
+
+1. **EditScriptDialog.js** - Main dialog component
+   - Create mode (script=null) vs Edit mode (script provided)
+   - Form fields: Script Name, Script File Name, Run Time, Periodicity, File Extension, Script Contents
+   - Mutual exclusivity: Run Time and Periodicity cannot both be set
+   - Validation: Script name is required
+   - Actions: Save (create/update), Delete (edit only), Cancel
+   - State management: form fields, loading, saving, error, validation states
+
+2. **EditScriptDialog.css** - Dialog styles
+   - Burgundy/cream color scheme consistent with application
+   - Form layout with grid for Run Time/Periodicity row
+   - Monospace font for script contents textarea
+   - Responsive design for mobile
+
+3. **Scripts.js** - Updated to integrate dialog
+   - Added state: showEditDialog, selectedScript
+   - handleAddScript() - Opens dialog with null script
+   - handleEdit(script) - Opens dialog with selected script
+   - handleCloseDialog() - Closes dialog and resets state
+   - handleDialogSave() - Refreshes table after save/delete
+   - Conditional rendering of EditScriptDialog component
+
+**Backend**: No changes required - Uses existing ScriptController endpoints from Step 11:
+- POST /api/scripts - Create script
+- PUT /api/scripts/{id} - Update script
+- DELETE /api/scripts/{id} - Delete script
+
+### Testing
+
+**Frontend**: 20 Jest tests in EditScriptDialog.test.js - All pass (249 total tests, zero regressions)
+- Dialog rendering for new/edit modes
+- Form field input and state management
+- Run Time/Periodicity mutual exclusivity
+- Validation (empty script name)
+- Save/Delete/Cancel actions
+- Error handling and display
+- Loading states and disabled buttons
+- Periodicity dropdown options
+
+**Scripts.test.js**: Updated 2 tests
+- "opens dialog when Add Script button clicked" - Verifies dialog opens
+- "opens dialog when Edit button clicked" - Verifies dialog opens with script
+
+**Backend**: 81 JUnit tests - All pass (zero regressions)
+
+### Key Technical Details
+
+**Time Format Conversion**:
+- HTML time input uses HH:MM format
+- Backend expects HH:MM:SS format
+- EditScriptDialog converts on save: `${runTime}:00`
+- EditScriptDialog strips seconds on load: `timeParts[0]:timeParts[1]`
+
+**Mutual Exclusivity Logic**:
+- handleRunTimeChange() clears periodicityMinutes when runTime is set
+- handlePeriodicityChange() clears runTime when periodicity is set
+- Ensures only one scheduling method is active
+
+**Periodicity Options**:
+- None: '' (manual execution)
+- 1 minute: 1
+- 5 minutes: 5
+- 10 minutes: 10
+- 1 hour: 60
+- 2 hours: 120
+- 6 hours: 360
+- 1 day: 1440
+
+**Form Validation**:
+- Script name is required (cannot be empty/whitespace)
+- All other fields are optional
+- Validation error displayed above form
+
+**Delete Confirmation**:
+- Uses window.confirm() for user confirmation
+- Shows script name in confirmation message
+- Only shown in edit mode (not for new scripts)
+
+**Dialog Architecture**:
+- Follows UserAccessDialog pattern from Step 9
+- Full-screen overlay with centered dialog
+- Header (burgundy), content (scrollable), footer (fixed)
+- Footer split: Delete on left, Cancel/Save on right
+- Buttons disabled during save operation
+
+### Testing Summary
+
+All tests pass with zero regressions:
+- **Backend**: 81/81 tests passing
+- **Frontend**: 249/249 tests passing  
+- **Total**: 330/330 tests passing ✅
+
+### Limitations
+
+- Script file upload not implemented (manual entry only)
+- Script engine reload not implemented (Step 19)
+- No syntax highlighting for script contents
+- No code linting or validation
+- No preview/test execution capability
+- Admin-only access not enforced
+
+### Future Enhancements
+
+- File browser/uploader for script files
+- Syntax highlighting for Python/Bash code
+- Code linter integration
+- Script test execution button
+- Script history/versioning
+- Import/export scripts
+- Script templates library
+- Dry-run/preview capability
+

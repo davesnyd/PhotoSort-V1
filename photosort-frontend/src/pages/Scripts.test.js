@@ -146,7 +146,7 @@ describe('Scripts Page', () => {
     });
   });
 
-  it('shows alert when Add Script button clicked', async () => {
+  it('opens dialog when Add Script button clicked', async () => {
     scriptService.getAllScripts.mockResolvedValue(
       mockApiResponse(mockScripts)
     );
@@ -154,13 +154,16 @@ describe('Scripts Page', () => {
     renderScriptsPage();
 
     await waitFor(() => {
-      const addButton = screen.getByText('Add Script');
-      fireEvent.click(addButton);
+      expect(screen.getByText('Photo Resize Script')).toBeInTheDocument();
     });
 
-    expect(global.alert).toHaveBeenCalledWith(
-      'Add Script functionality will be implemented in Step 12.'
-    );
+    const addButton = screen.getByText('Add Script');
+    fireEvent.click(addButton);
+
+    // Verify dialog opens for adding a new script by checking for dialog overlay
+    await waitFor(() => {
+      expect(screen.getByTestId('edit-script-dialog-overlay')).toBeInTheDocument();
+    });
   });
 
   it('renders Edit button for each script', async () => {
@@ -178,7 +181,7 @@ describe('Scripts Page', () => {
     expect(editButtons.length).toBe(2); // One for each script
   });
 
-  it('shows alert when Edit button clicked', async () => {
+  it('opens dialog when Edit button clicked', async () => {
     scriptService.getAllScripts.mockResolvedValue(
       mockApiResponse(mockScripts)
     );
@@ -192,9 +195,10 @@ describe('Scripts Page', () => {
     const editButtons = screen.getAllByText('Edit');
     fireEvent.click(editButtons[0]);
 
-    expect(global.alert).toHaveBeenCalledWith(
-      expect.stringContaining('Edit functionality will be implemented in Step 12')
-    );
+    // Verify dialog opens for editing by checking for dialog overlay
+    await waitFor(() => {
+      expect(screen.getByTestId('edit-script-dialog-overlay')).toBeInTheDocument();
+    });
   });
 
   it('handles empty script list', async () => {

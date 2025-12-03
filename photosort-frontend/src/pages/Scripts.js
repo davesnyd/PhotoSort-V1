@@ -6,15 +6,18 @@
  * Note: Currently implements client-side pagination since backend returns all scripts
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import TablePage from '../components/TablePage';
 import SearchControls from '../components/SearchControls';
 import ScriptTable from '../components/ScriptTable';
 import PaginationControls from '../components/PaginationControls';
+import EditScriptDialog from '../components/EditScriptDialog';
 import useTableData from '../hooks/useTableData';
 import scriptService from '../services/scriptService';
 
 const Scripts = () => {
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedScript, setSelectedScript] = useState(null);
 
   // Wrapper function to adapt script service response to PagedResponse format
   const fetchScriptsWithPagination = async (params) => {
@@ -83,7 +86,8 @@ const Scripts = () => {
     handleQuickSearch,
     handleAdvancedSearch,
     handleSortChange,
-    handlePageChange
+    handlePageChange,
+    refresh
   } = useTableData(
     fetchScriptsWithPagination,
     { field: 'scriptName', direction: 'asc' },
@@ -91,17 +95,34 @@ const Scripts = () => {
   );
 
   /**
-   * Handle edit button click (placeholder for Step 12)
+   * Handle edit button click
    */
   const handleEdit = (script) => {
-    alert(`Edit functionality will be implemented in Step 12.\nScript: ${script.scriptName}`);
+    setSelectedScript(script);
+    setShowEditDialog(true);
   };
 
   /**
-   * Handle add script button (placeholder for Step 12)
+   * Handle add script button
    */
   const handleAddScript = () => {
-    alert('Add Script functionality will be implemented in Step 12.');
+    setSelectedScript(null);
+    setShowEditDialog(true);
+  };
+
+  /**
+   * Handle dialog close
+   */
+  const handleCloseDialog = () => {
+    setShowEditDialog(false);
+    setSelectedScript(null);
+  };
+
+  /**
+   * Handle dialog save - refresh table
+   */
+  const handleDialogSave = () => {
+    refresh();
   };
 
   return (
@@ -159,6 +180,14 @@ const Scripts = () => {
             onPageChange={handlePageChange}
           />
         </>
+      )}
+
+      {showEditDialog && (
+        <EditScriptDialog
+          script={selectedScript}
+          onClose={handleCloseDialog}
+          onSave={handleDialogSave}
+        />
       )}
     </TablePage>
   );
