@@ -1522,3 +1522,95 @@ Key features: Image serving from disk (not database), auto-creates metadata fiel
 - Inline editing with save on Enter key
 - Tag/metadata updates replace all (not incremental)
 
+
+
+## Step 11: Scripts Table Page
+
+### Functionality Created
+**Script Management Table (Admin Only)**
+
+Admin page for viewing and managing automated scripts with table display showing script name, file name, schedule type, and file extension.
+
+### Implementation Details
+
+#### Backend Components
+
+**ScriptController.java** - 5 REST endpoints:
+- `GET /api/scripts` - Get all scripts
+- `GET /api/scripts/{id}` - Get single script  
+- `POST /api/scripts` - Create new script
+- `PUT /api/scripts/{id}` - Update existing script
+- `DELETE /api/scripts/{id}` - Delete script
+
+Uses ApiResponse wrapper pattern, returns 404 for non-existent IDs, clears ID on POST to ensure new entity
+
+Note: Currently returns all scripts without server-side pagination (client-side pagination implemented)
+
+#### Frontend Components
+
+**Scripts.js** (Main Page) - Reuses existing component architecture: TablePage, SearchControls, PaginationControls, useTableData hook
+
+**ScriptTable.js** - Domain-specific table wrapper using DataTable, columns: Script Name, Script File, Schedule, File Extension
+
+**scriptService.js** - API methods: getAllScripts, getScriptById, createScript, updateScript, deleteScript
+
+**ScriptTable.css** - Schedule badges (daily/periodic/manual), file extension code styling
+
+Key architectural pattern: Client-side pagination wrapper adapts simple list API response to PagedResponse format expected by useTableData hook
+
+#### UI Features
+
+- Schedule display: "Daily at HH:MM" or "Every X minutes/hours/days"
+- File extension displayed as code blocks
+- "Add Script" button (placeholder for Step 12)
+- "Edit" buttons per row (placeholder for Step 12)
+- Search, sort, pagination (client-side)
+
+### Testing
+
+**Backend**: 10 JUnit tests in ScriptControllerTest.java - All pass (81 total tests, zero regressions)
+- CRUD operations for scripts
+- 404 handling for non-existent IDs
+- runTime vs periodicityMinutes validation
+
+**Frontend**: 18 Jest tests in Scripts.test.js - All pass (229 total tests, zero regressions)
+- Page rendering, loading, error states
+- Script table display with schedule badges
+- Search controls and pagination
+- Add/Edit button placeholders
+
+### Key Technical Details
+
+- Client-side pagination: fetchScriptsWithPagination wrapper function converts backend list response to PagedResponse format
+- Consistent with existing table patterns (Users, Photos)
+- Reuses DataTable, useTableData hook, SearchControls, PaginationControls
+- Schedule formatting: periodicityMinutes displayed as human-readable intervals
+- RunTime formatted as HH:MM (removes seconds)
+
+### Database Schema
+
+**scripts table** (created in Step 1):
+- `script_id` (PK) - Auto-generated
+- `script_name` - Unique name
+- `script_file_name` - Script filename
+- `script_contents` - Full script text
+- `run_time` - Daily execution time (mutually exclusive with periodicity)
+- `periodicity_minutes` - Recurring interval in minutes
+- `file_extension` - File type to process
+- `created_at`, `updated_at` - Timestamps
+
+### Limitations
+
+- Edit Script Dialog not implemented (Step 12)
+- Server-side pagination not implemented (client-side only)
+- Admin-only access not enforced in backend (placeholder)
+- No script execution functionality (Step 14)
+- No validation for runTime vs periodicityMinutes mutual exclusivity
+
+### Future Enhancements (Step 12)
+
+- Edit Script Dialog with code editor
+- Script file upload
+- runTime/Periodicity validation  
+- Script engine reload trigger
+- Syntax highlighting for script contents
