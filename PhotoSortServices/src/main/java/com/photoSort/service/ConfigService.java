@@ -20,8 +20,8 @@ import java.util.Properties;
  * Reads configuration from Spring Environment and application.properties
  * Provides methods to get and update configuration with password redaction
  *
- * Note: Uses in-memory override map for runtime configuration changes
- * to allow changes to take effect without application restart
+ * Note: Configuration changes are persisted to application.properties file
+ * and also stored in-memory to take effect immediately without restart
  */
 @Service
 public class ConfigService {
@@ -94,10 +94,11 @@ public class ConfigService {
     /**
      * Update system configuration
      * Only updates password fields if value is not "********"
-     * Stores changes in memory to take effect immediately
+     * Stores changes in memory to take effect immediately and persists to file
      *
      * @param config Configuration data to update
      * @throws IllegalArgumentException if configuration is invalid
+     * @throws RuntimeException if unable to save to properties file
      */
     public void updateConfiguration(ConfigurationDTO config) {
         // Validate configuration first
@@ -163,6 +164,38 @@ public class ConfigService {
             if (stag.getPythonExecutable() != null) {
                 configOverrides.put("stag.python.executable", stag.getPythonExecutable());
             }
+        }
+
+        // Persist changes to application.properties file
+        saveToPropertiesFile();
+    }
+
+    /**
+     * Save configuration overrides to application.properties file
+     * Preserves all existing properties and only updates changed values
+     *
+     * @throws RuntimeException if unable to read or write properties file
+     */
+    private void saveToPropertiesFile() {
+        try {
+            // Load existing properties from file
+            Properties properties = new Properties();
+            try (FileInputStream input = new FileInputStream(PROPERTIES_FILE)) {
+                properties.load(input);
+            }
+
+            // Update properties with overrides
+            for (Map.Entry<String, String> entry : configOverrides.entrySet()) {
+                properties.setProperty(entry.getKey(), entry.getValue());
+            }
+
+            // Write properties back to file with header comment
+            try (FileOutputStream output = new FileOutputStream(PROPERTIES_FILE)) {
+                properties.store(output, "Updated by PhotoSort Configuration Management");
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save configuration to properties file: " + e.getMessage(), e);
         }
     }
 

@@ -47,7 +47,7 @@ This document captures insights and lessons learned during the PhotoSort develop
 ## Step 13: Configuration Management Page
 
 - **Problem**: Updating application.properties at runtime doesn't take effect without application restart
-  **Approach to Improve**: Use an in-memory configuration override map that takes precedence over application.properties. This allows configuration changes to take effect immediately without requiring a restart. For production, consider using Spring Cloud Config for externalized configuration.
+  **Approach to Improve**: Use both in-memory configuration override map AND file persistence. The in-memory map allows configuration changes to take effect immediately without requiring a restart, while persisting to application.properties ensures changes survive restarts. Use Java Properties class to safely read, update, and write the properties file while preserving all existing properties.
 
 - **Problem**: Password fields need to be redacted when displaying configuration but only updated when actually changed
   **Approach to Improve**: Always redact passwords to "********" in GET responses. In PUT requests, only update password fields if the value is not "********". This prevents accidentally overwriting passwords with the redacted placeholder.
