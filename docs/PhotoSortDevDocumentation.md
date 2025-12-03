@@ -1315,3 +1315,157 @@ Allows users to customize which columns appear in their photo table by selecting
 - Dialog should be triggered by "Modify Columns" button above photo table
 - On save, photo table should refresh with new column configuration
 
+## Step 9: User Access Dialog
+
+### Functionality Created
+**Photo Permission Management System**
+
+Allows photo owners to control which users can access their private photos through a dialog interface.
+
+### Implementation Details
+
+#### Backend Components
+
+**PhotoPermissionController.java**
+- REST controller for managing photo permissions
+- Located in: `PhotoSortServices/src/main/java/com/photoSort/controller/PhotoPermissionController.java`
+- Endpoints:
+  - `GET /api/photos/{photoId}/permissions` - Get list of user IDs who have access to a photo
+  - `PUT /api/photos/{photoId}/permissions` - Update photo permissions (replaces all existing permissions)
+
+**Key Implementation Details**:
+- Uses `@Transactional` annotation for atomic permission updates
+- Uses `EntityManager.flush()` to ensure deletes are committed before inserts
+- Prevents unique constraint violations on (photo_id, user_id) composite key
+- Returns 404 if photo doesn't exist
+- Silently skips invalid user IDs in the request
+
+**PhotoPermissionRepository.java**
+- Custom query method: `List<PhotoPermission> findByPhoto(Photo photo)`
+- Efficiently retrieves all permissions for a specific photo
+
+#### Frontend Components
+
+**photoService.js (Enhanced)**
+- Added `getPhotoPermissions(photoId)` method
+- Added `updatePhotoPermissions(photoId, userIds)` method
+- Located in: `photosort-frontend/src/services/photoService.js`
+
+**UserAccessDialog.js**
+- React dialog component for managing photo access
+- Located in: `photosort-frontend/src/components/UserAccessDialog.js`
+- Features:
+  - Displays all users with checkboxes
+  - Shows currently granted permissions as checked
+  - Allows toggling permissions on/off
+  - Save/Cancel buttons for committing changes
+  - Error handling for API failures
+  - Loading states during data fetch and save operations
+
+**UserAccessDialog.css**
+- Styling for the dialog component
+- Uses application color scheme (Burgundy, Navy Blue, Cream)
+- Responsive design with scrollable user list
+- Located in: `photosort-frontend/src/styles/UserAccessDialog.css`
+
+### Design Patterns Used
+
+1. **Repository Pattern**: PhotoPermissionRepository for database access
+2. **Service Layer Pattern**: photoService encapsulates API calls
+3. **Modal Dialog Pattern**: Overlay with centered dialog for UI interaction
+4. **Optimistic UI**: Local state updates before API confirmation
+5. **Transaction Management**: @Transactional with explicit flush for data consistency
+
+### Limitations
+
+- No pagination for user list (could be slow with many users)
+- Cannot exclude specific users from being shown in the list
+- No search/filter functionality for finding users
+- All permissions replaced on update (no partial updates)
+- No permission history or audit trail
+- Changes are immediate (no undo functionality)
+
+### Expectations
+
+- Photo must exist in database before permissions can be managed
+- User IDs in permission list must be valid (invalid IDs are silently skipped)
+- Updates replace ALL existing permissions atomically
+- Empty permission list removes all access
+- Dialog expects userService.getAllUsers() to return all users
+- Component expects props: photoId, photoFilename, onClose, onSave
+
+### Security Considerations
+
+- TEMPORARY: Authentication disabled for /api/** endpoints during development
+- TODO: Add authorization check to verify requester is photo owner or admin
+- TODO: Re-enable CSRF protection for permission endpoints
+- Currently any authenticated user can modify any photo's permissions
+- No rate limiting on permission updates
+
+### Testing
+
+**Backend Tests (PhotoPermissionControllerTest.java)**
+- 7 JUnit tests with Spring Boot Test
+- Located in: `PhotoSortServices/src/test/java/com/photoSort/controller/PhotoPermissionControllerTest.java`
+- Test coverage:
+  - Get permissions returns users with access
+  - Get permissions for photo with no permissions (returns empty list)
+  - Update permissions adds new users
+  - Update permissions removes users
+  - Update permissions replaces existing users
+  - Get permissions for non-existent photo returns 404
+  - Update permissions for non-existent photo returns 404
+
+**Frontend Tests (UserAccessDialog.test.js)**
+- 13 Jest/React Testing Library tests
+- Located in: `photosort-frontend/src/components/UserAccessDialog.test.js`
+- Test coverage:
+  - Renders with photo filename
+  - Displays loading state
+  - Displays all users after loading
+  - Shows checked checkboxes for users with access
+  - Can toggle user permissions
+  - Save button updates permissions and closes dialog
+  - Cancel button closes without saving
+  - Error handling for user load failures
+  - Error handling for permission load failures
+  - Error handling for save failures
+  - No users message when list is empty
+  - Save button shows "Saving..." state
+  - Buttons disabled while saving
+
+### Integration Notes
+
+- Dialog component ready for integration into Photos page
+- Requires props: photoId, photoFilename, onClose callback, onSave callback
+- Should be triggered by "Manage Access" button on private photos
+- Can be used even before Photos page is fully implemented
+- Integrates with existing userService.getAllUsers() method
+
+### Database Schema
+
+**photo_permissions table** (created in Step 1):
+- `permission_id` (PK) - Auto-generated ID
+- `photo_id` (FK) - References photos table
+- `user_id` (FK) - References users table
+- `created_at` - Auto-set timestamp
+- Unique constraint on (photo_id, user_id)
+
+### Performance Considerations
+
+- Uses repository method `findByPhoto()` instead of `findAll().filter()`
+- Bulk delete + bulk insert pattern for permission updates
+- Explicit flush() prevents constraint violations during transaction
+- No N+1 query problems (single query per operation)
+
+### Future Enhancements
+
+- Add pagination for large user lists
+- Add search/filter for finding users
+- Add permission history/audit trail
+- Add undo functionality
+- Add authorization checks (owner/admin only)
+- Add incremental permission updates (add/remove specific users)
+- Show user profile pictures in the list
+- Add "Select All" / "Deselect All" buttons
+

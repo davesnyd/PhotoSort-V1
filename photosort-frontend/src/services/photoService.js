@@ -108,6 +108,35 @@ const photoService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * Get list of user IDs who have access to a photo
+   * @param {number} photoId Photo ID
+   * @returns {Promise} List of user IDs with access
+   */
+  getPhotoPermissions: async (photoId) => {
+    try {
+      const response = await api.get(`/api/photos/${photoId}/permissions`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Update photo permissions
+   * @param {number} photoId Photo ID
+   * @param {Array<number>} userIds List of user IDs to grant access
+   * @returns {Promise} Success response
+   */
+  updatePhotoPermissions: async (photoId, userIds) => {
+    try {
+      const response = await api.put(`/api/photos/${photoId}/permissions`, userIds);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 
