@@ -523,3 +523,47 @@ All users can now view and manage photos they have access to. The system automat
 ---
 
 *Additional user functionality will be documented as features are implemented.*
+
+## Customize Photo Table Columns
+
+### Feature Description
+The Modify Columns Dialog allows you to customize which columns appear in your photo table. You can select from standard photo information, camera EXIF data, and custom metadata fields.
+
+### How to Use
+
+#### Opening the Dialog
+1. Navigate to the Photos page
+2. Click the "Modify Columns" button above the photo table
+3. The Column Customization dialog will appear
+
+#### Selecting Columns
+1. The dialog shows all available columns with checkboxes
+2. Checked columns will be visible in your photo table
+3. Unchecked columns will be hidden
+4. You can check/uncheck any column by clicking its checkbox
+
+#### Column Types Available
+- **Standard Columns**: File name, thumbnail, creation date, modified date, owner, tags
+- **EXIF Data**: Camera make/model, date taken, GPS location, exposure settings, ISO, focal length
+- **Custom Metadata**: Any custom fields that have been added to photos
+
+#### Saving Changes
+1. Select your desired columns
+2. Click the "Save" button
+3. The dialog will close and your preferences will be saved
+4. Refresh the page to see your new column configuration
+
+#### Canceling Changes
+- Click the "Cancel" button to close the dialog without saving
+- Your previous column preferences will remain unchanged
+
+### Important Notes
+- You must have at least one column selected (the Save button will be disabled if no columns are selected)
+- Your column preferences are saved per user - other users won't see your customizations
+- New custom metadata fields will automatically appear in the available columns list
+
+### Tips
+- Start with standard columns if you're unsure what to include
+- Add EXIF fields if you want to see camera technical details
+- Include custom metadata fields that are relevant to your photo organization
+

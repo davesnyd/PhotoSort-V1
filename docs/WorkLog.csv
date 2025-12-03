@@ -27,3 +27,10 @@ Date,Time,Step Number,Step Name,Status
 2025-12-02,12:50,7,Photo Table Page,CURRENT-TESTS
 2025-12-02,12:56,7,Photo Table Page,ALL-TESTS
 2025-12-02,13:15,7,Photo Table Page,DOCS
+2025-12-02,20:35,8,Modify Columns Dialog,DEV
+2025-12-02,20:35,8,Modify Columns Dialog,START-TESTS
+2025-12-02,20:37,8,Modify Columns Dialog,PLAN-CREATE
+2025-12-02,20:38,8,Modify Columns Dialog,PLAN-IMPLEMENT
+2025-12-02,20:38,8,Modify Columns Dialog,CURRENT-TESTS
+2025-12-02,20:38,8,Modify Columns Dialog,ALL-TESTS
+2025-12-02,20:39,8,Modify Columns Dialog,DOCS

@@ -3,6 +3,8 @@
  */
 package com.photoSort.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photoSort.dto.ApiResponse;
 import com.photoSort.dto.ColumnPreferenceDTO;
 import com.photoSort.dto.PagedResponse;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService userService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     private UserRepository userRepository;
@@ -43,8 +46,9 @@ public class UserController {
     private UserColumnPreferenceRepository userColumnPreferenceRepository;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, ObjectMapper objectMapper) {
         this.userService = userService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -76,7 +80,7 @@ public class UserController {
             @RequestParam(defaultValue = "email") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) List<SearchFilterDTO> filters) {
+            @RequestParam(required = false) String filters) {
 
         // TEMPORARY: Authentication checks disabled for testing
         // TODO: Re-enable when OAuth is properly configured
@@ -98,9 +102,22 @@ public class UserController {
         try {
             PagedResponse<UserDTO> response;
 
-            if (filters != null && !filters.isEmpty()) {
+            // Parse filters JSON string if provided
+            List<SearchFilterDTO> filterList = null;
+            if (filters != null && !filters.trim().isEmpty()) {
+                try {
+                    filterList = objectMapper.readValue(filters,
+                            new TypeReference<List<SearchFilterDTO>>() {});
+                } catch (Exception e) {
+                    return ResponseEntity.status(400)
+                            .body(ApiResponse.error("INVALID_REQUEST",
+                                  "Invalid filters format: " + e.getMessage()));
+                }
+            }
+
+            if (filterList != null && !filterList.isEmpty()) {
                 // Advanced search with filters
-                response = userService.advancedSearchUsers(filters, page, pageSize, sortBy, sortDir);
+                response = userService.advancedSearchUsers(filterList, page, pageSize, sortBy, sortDir);
             } else if (search != null && !search.trim().isEmpty()) {
                 // Quick search
                 response = userService.searchUsers(search, page, pageSize, sortBy, sortDir);

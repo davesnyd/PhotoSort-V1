@@ -1,0 +1,123 @@
+/**
+ * ModifyColumnsDialog Styles
+ * Copyright 2025, David Snyderman
+ */
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog-container {
+  background-color: #FFFDD0; /* Cream */
+  border: 3px solid #800020; /* Burgundy */
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-header {
+  margin-bottom: 20px;
+  border-bottom: 2px solid #800020; /* Burgundy */
+  padding-bottom: 10px;
+}
+
+.dialog-header h2 {
+  color: #800020; /* Burgundy */
+  margin: 0;
+}
+
+.dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.column-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.column-item {
+  padding: 8px;
+  border-bottom: 1px solid #ccc;
+}
+
+.column-item label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #000080; /* Navy */
+}
+
+.column-item input[type="checkbox"] {
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.column-name {
+  text-transform: capitalize;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 2px solid #800020; /* Burgundy */
+}
+
+.dialog-btn {
+  padding: 10px 20px;
+  border: 2px solid #800020; /* Burgundy */
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.save-btn {
+  background-color: #800020; /* Burgundy */
+  color: #FFFDD0; /* Cream */
+}
+
+.save-btn:hover:not(:disabled) {
+  background-color: #a0002a;
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background-color: #FFFDD0; /* Cream */
+  color: #800020; /* Burgundy */
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background-color: #fffac0;
+}
+
+.error-message {
+  color: #d32f2f;
+  padding: 10px;
+  background-color: #ffebee;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}

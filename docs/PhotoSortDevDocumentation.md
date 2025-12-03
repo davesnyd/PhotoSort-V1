@@ -1232,3 +1232,86 @@ Future enhancements:
 - Column customization interface
 - EXIF data extraction and display
 - Photo tagging and categorization
+
+## Step 8: Modify Columns Dialog
+
+### Functionality Created
+**Column Customization System**
+
+Allows users to customize which columns appear in their photo table by selecting from standard columns, EXIF fields, and custom metadata fields.
+
+### Implementation Details
+
+#### Backend Components
+
+**MetadataController.java**
+- REST controller for metadata operations
+- Endpoint: `GET /api/metadata/fields`
+- Returns unified list of all available column options:
+  - Standard columns (file_name, thumbnail, file_created_date, etc.)
+  - EXIF fields (camera_make, camera_model, date_time_original, etc.)
+  - Custom metadata fields from metadata_fields table
+
+**Column Preference Endpoints (Already Existed in UserController)**
+- `GET /api/users/{userId}/columns` - Get user's column preferences
+- `PUT /api/users/{userId}/columns` - Update column preferences
+
+#### Frontend Components
+
+**metadataService.js**
+- Service for metadata-related API calls
+- Method: `getAllFields()` - Fetches all available column options
+
+**ModifyColumnsDialog.js**
+- React dialog component for column customization
+- Displays checkboxes for all available columns
+- Validates at least one column must be selected
+- Saves preferences to backend
+
+**userService.js (Enhanced)**
+- Added `getUserColumns(userId)` method
+- Added `updateUserColumns(userId, columns)` method
+
+### Design Patterns Used
+
+1. **Service Layer Pattern**: metadataService encapsulates API calls
+2. **DTO Pattern**: ColumnPreferenceDTO for data transfer
+3. **Repository Pattern**: MetadataFieldRepository for database access
+4. **Modal Dialog Pattern**: Overlay with container for UI interaction
+
+### Limitations
+
+- All columns treated as "STANDARD" type in frontend (could be enhanced to distinguish STANDARD vs EXIF vs CUSTOM)
+- No drag-and-drop column reordering (uses displayOrder field)
+- Column visibility is binary (shown/hidden) - no column width customization
+- Changes require page refresh to take effect in photo table
+
+### Expectations
+
+- User must be authenticated to access preferences
+- At least one column must remain selected (enforced by validation)
+- Column preferences persist per user in user_column_preferences table
+- New custom metadata fields automatically appear in available columns list
+
+### Security Considerations
+
+- TEMPORARY: Authentication disabled for /api/** endpoints during development
+- TODO: Re-enable authentication when OAuth fully integrated
+- Users can only modify their own column preferences
+- Admins can modify any user's preferences
+
+### Testing
+
+**Backend Tests (MetadataControllerTest.java)**
+- 5 JUnit tests verifying endpoint functionality
+- Tests verify standard columns, EXIF fields, and custom fields included
+- Tests verify new fields appear when added to database
+- All tests use @ActiveProfiles("test") for test database
+
+### Integration Notes
+
+- Dialog component ready for integration into Photos page
+- Requires Photos page to pass userId prop to dialog
+- Dialog should be triggered by "Modify Columns" button above photo table
+- On save, photo table should refresh with new column configuration
+

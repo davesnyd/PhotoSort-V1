@@ -73,6 +73,35 @@ const userService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * Get user's column preferences for photo table
+   * @param {number} userId User ID
+   * @returns {Promise} List of column preferences
+   */
+  getUserColumns: async (userId) => {
+    try {
+      const response = await api.get(`/api/users/${userId}/columns`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Update user's column preferences for photo table
+   * @param {number} userId User ID
+   * @param {Array} columns List of column preferences to save
+   * @returns {Promise} Success response
+   */
+  updateUserColumns: async (userId, columns) => {
+    try {
+      const response = await api.put(`/api/users/${userId}/columns`, columns);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

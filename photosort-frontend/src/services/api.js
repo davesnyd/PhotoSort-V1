@@ -17,17 +17,37 @@ const api = axios.create({
   withCredentials: true, // Important for session-based auth
 });
 
-// TEMPORARY: Authentication interceptors disabled for testing
-// TODO: Re-enable when OAuth is properly configured
+// Helper function to get CSRF token from cookies
+const getCsrfToken = () => {
+  const name = 'XSRF-TOKEN=';
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const cookieArray = decodedCookie.split(';');
+  for (let i = 0; i < cookieArray.length; i++) {
+    let cookie = cookieArray[i].trim();
+    if (cookie.indexOf(name) === 0) {
+      return cookie.substring(name.length, cookie.length);
+    }
+  }
+  return null;
+};
 
-/* PRODUCTION CODE - Uncomment when OAuth is set up:
-// Request interceptor to add authentication token if available
+// Request interceptor to add authentication token and CSRF token
 api.interceptors.request.use(
   (config) => {
+    // Add authentication token if available
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token for state-changing requests (POST, PUT, DELETE, PATCH)
+    if (['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase())) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        config.headers['X-XSRF-TOKEN'] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => {
@@ -48,6 +68,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-*/
 
 export default api;

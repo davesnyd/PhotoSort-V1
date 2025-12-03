@@ -11,6 +11,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
 
 /**
  * Security configuration for PhotoSort application.
@@ -36,19 +41,16 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // TEMPORARY: Disable authentication for testing
-        // TODO: Re-enable OAuth when Google credentials are configured
+        // OAuth 2.0 authentication with Google
         http
-                .csrf(csrf -> csrf.disable())  // Disable CSRF for testing
-                .authorizeHttpRequests(authz -> authz
-                        .anyRequest().permitAll()  // Allow all requests without authentication
-                );
+                // CORS configuration
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-        /* PRODUCTION CONFIGURATION - Uncomment when OAuth is set up:
-        http
                 // CSRF protection
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        // Temporarily disable CSRF for API endpoints to test
+                        .ignoringRequestMatchers("/api/**")
                 )
 
                 // Endpoint authorization
@@ -56,8 +58,9 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/", "/login", "/error", "/oauth2/**").permitAll()
 
-                        // API endpoints require authentication
-                        .requestMatchers("/api/**").authenticated()
+                        // TEMPORARY: API endpoints allow unauthenticated access for testing
+                        // TODO: Re-enable authentication when OAuth is fully integrated
+                        .requestMatchers("/api/**").permitAll()
 
                         // All other requests require authentication
                         .anyRequest().authenticated()
@@ -66,7 +69,7 @@ public class SecurityConfig {
                 // OAuth 2.0 login configuration
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
-                        .defaultSuccessUrl("/", true)
+                        .successHandler(oAuth2SuccessHandler())
                         .failureUrl("/login?error=true")
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
@@ -81,8 +84,38 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                 );
-        */
 
         return http.build();
+    }
+
+    /**
+     * OAuth2 success handler - redirects to frontend after successful Google login
+     *
+     * @return SimpleUrlAuthenticationSuccessHandler configured for frontend redirect
+     */
+    @Bean
+    public SimpleUrlAuthenticationSuccessHandler oAuth2SuccessHandler() {
+        SimpleUrlAuthenticationSuccessHandler handler = new SimpleUrlAuthenticationSuccessHandler();
+        handler.setDefaultTargetUrl("http://localhost:3000/");
+        handler.setAlwaysUseDefaultTargetUrl(true);
+        return handler;
+    }
+
+    /**
+     * Configure CORS to allow frontend (localhost:3000) to communicate with backend.
+     *
+     * @return CorsConfigurationSource with allowed origins and methods
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
