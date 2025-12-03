@@ -3,80 +3,62 @@
  */
 package com.photoSort.controller;
 
-import com.photoSort.service.CustomOAuth2UserService;
+import com.photoSort.model.User;
+import com.photoSort.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Controller for authentication-related endpoints.
- * Handles user authentication status, logout, and user information.
+ * Authentication controller for checking auth status
  */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    @Autowired
+    private UserRepository userRepository;
+
     /**
-     * Get current authenticated user information.
-     *
-     * @param principal OAuth2 user principal (injected by Spring Security)
-     * @return User information or 401 if not authenticated
+     * Get current authenticated user
+     * @param principal OAuth2User principal
+     * @return Current user data or 401 if not authenticated
      */
     @GetMapping("/current")
-    public ResponseEntity<Map<String, Object>> getCurrentUser(
-            @AuthenticationPrincipal OAuth2User principal) {
-
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
         if (principal == null) {
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(401).body("Not authenticated");
+        }
+
+        String email = principal.getAttribute("email");
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found");
         }
 
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
+        response.put("userId", user.getUserId());
+        response.put("email", user.getEmail());
+        response.put("displayName", user.getDisplayName());
+        response.put("userType", user.getUserType().toString());
 
-        Map<String, Object> userData = new HashMap<>();
-
-        if (principal instanceof CustomOAuth2UserService.CustomOAuth2User customUser) {
-            userData.put("userId", customUser.getUserId());
-            userData.put("email", customUser.getUser().getEmail());
-            userData.put("displayName", customUser.getUser().getDisplayName());
-            userData.put("userType", customUser.getUser().getUserType().toString());
-            userData.put("isAdmin", customUser.isAdmin());
-        } else {
-            userData.put("name", principal.getName());
-            userData.put("email", principal.getAttribute("email"));
-        }
-
-        response.put("data", userData);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Check if user is authenticated.
-     *
-     * @param principal OAuth2 user principal
-     * @return Authentication status
+     * Logout endpoint
+     * @return Success message
      */
-    @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getAuthStatus(
-            @AuthenticationPrincipal OAuth2User principal) {
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("authenticated", principal != null);
-
-        if (principal instanceof CustomOAuth2UserService.CustomOAuth2User customUser) {
-            data.put("isAdmin", customUser.isAdmin());
-        }
-
-        response.put("data", data);
-        return ResponseEntity.ok(response);
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        // Spring Security handles the actual logout
+        // This endpoint is just for the frontend to call
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 }

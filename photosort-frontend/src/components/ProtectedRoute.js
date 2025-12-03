@@ -10,16 +10,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-  // TEMPORARY: Disable authentication for testing
-  // TODO: Re-enable when OAuth is properly configured
-  const SKIP_AUTH = true;
-
-  if (SKIP_AUTH) {
-    // Bypass all authentication checks for testing
-    return children;
-  }
-
-  /* PRODUCTION CODE - Uncomment when OAuth is set up:
+  // OAuth authentication enabled
   const { isAuthenticated, user, loading } = useAuth();
 
   // Show loading spinner while checking authentication
@@ -62,7 +53,6 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
       </div>
     );
   }
-  */
 
   // Render the protected content
   return children;

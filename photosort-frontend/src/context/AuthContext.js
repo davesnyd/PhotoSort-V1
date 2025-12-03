@@ -11,8 +11,8 @@ import authService from '../services/authService';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // TEMPORARY: Skip authentication for testing
-  const SKIP_AUTH = true;
+  // OAuth authentication enabled
+  const SKIP_AUTH = false;
 
   const [user, setUser] = useState(SKIP_AUTH ? { displayName: 'Test User', email: 'test@test.com', userType: 'ADMIN' } : null);
   const [loading, setLoading] = useState(SKIP_AUTH ? false : true);
@@ -39,27 +39,24 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      // Check if we have stored auth data
-      const storedUser = authService.getStoredUser();
-      const hasToken = authService.isAuthenticated();
-
-      if (hasToken && storedUser) {
-        // Verify with backend that session is still valid
-        try {
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-          setIsAuthenticated(true);
-        } catch (error) {
-          // Session expired or invalid
-          logout();
-        }
+      // Session-based auth - check with backend
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        setUser(userData);
+        setIsAuthenticated(true);
+        // Store user data for convenience (but auth is session-based)
+        localStorage.setItem('user', JSON.stringify(userData));
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      // Not authenticated or session expired
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
     } finally {
       setLoading(false);
     }
-  }, [logout]);
+  }, []);
 
   // Check authentication status on component mount
   useEffect(() => {

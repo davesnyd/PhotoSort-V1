@@ -43,3 +43,20 @@ This document captures insights and lessons learned during the PhotoSort develop
 
 - **Problem**: Need to distinguish between regular users and administrators
   **Approach to Improve**: Add UserType enum (USER, ADMIN) to User entity. Default new users to USER type. Provide UserService.updateUserType method for administrators to promote users.
+
+## Step 13: Configuration Management Page
+
+- **Problem**: Updating application.properties at runtime doesn't take effect without application restart
+  **Approach to Improve**: Use an in-memory configuration override map that takes precedence over application.properties. This allows configuration changes to take effect immediately without requiring a restart. For production, consider using Spring Cloud Config for externalized configuration.
+
+- **Problem**: Password fields need to be redacted when displaying configuration but only updated when actually changed
+  **Approach to Improve**: Always redact passwords to "********" in GET responses. In PUT requests, only update password fields if the value is not "********". This prevents accidentally overwriting passwords with the redacted placeholder.
+
+- **Problem**: Frontend tests failing due to multiple elements with same value (password fields)
+  **Approach to Improve**: Use `getAllByDisplayValue()` instead of `getByDisplayValue()` when testing elements that may have duplicate values. Check the count of matched elements is greater than zero rather than testing for a specific element.
+
+- **Problem**: Configuration DTO needs proper nested structure for JSON deserialization
+  **Approach to Improve**: Create properly structured DTO classes with nested static classes for each configuration section (Database, Git, OAuth, STAG). This ensures Jackson can serialize/deserialize the configuration correctly.
+
+- **Problem**: Test configuration object creation is repetitive across multiple test cases
+  **Approach to Improve**: Create a helper method `createTestConfiguration()` that returns a properly initialized ConfigurationDTO with all nested objects. This reduces code duplication and makes tests more maintainable.

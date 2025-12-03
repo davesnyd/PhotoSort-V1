@@ -18,6 +18,7 @@ import Users from './pages/Users';
 import Photos from './pages/Photos';
 import ImageDisplay from './pages/ImageDisplay';
 import Scripts from './pages/Scripts';
+import Configuration from './pages/Configuration';
 import './App.css';
 
 // Create a client for React Query
@@ -117,10 +118,7 @@ function App() {
                 path="/configuration"
                 element={
                   <ProtectedRoute adminOnly={true}>
-                    <div style={{ padding: '40px', backgroundColor: '#FFFDD0', minHeight: '100vh' }}>
-                      <h2 style={{ color: '#800020' }}>Configuration</h2>
-                      <p style={{ color: '#000080' }}>This feature will be implemented in Step 13.</p>
-                    </div>
+                    <Configuration />
                   </ProtectedRoute>
                 }
               />
