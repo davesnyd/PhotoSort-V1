@@ -1925,3 +1925,111 @@ All tests passing:
 - Special "tags" field for comma-separated tags
 - Service is stateless - no caching of parsed results
 
+---
+
+## Step 17: STAG Script Integration
+
+**Functionality Created**: Execute STAG Python script for AI-generated photo tagging
+
+**Implementation Notes**:
+
+This service integrates with the STAG (Simple Tag Auto-Generator) Python script to automatically generate descriptive tags for photos using AI/ML analysis. The service executes the external Python script, captures output, and parses generated tags.
+
+**Core Components**:
+
+1. **StagService**: Executes STAG script and parses results
+   - Uses ProcessBuilder for external process execution
+   - Configures working directory to script location
+   - Implements 30-second timeout to prevent hanging
+   - Captures stdout/stderr output
+   - Parses tags from output (supports comma-separated or newline-separated)
+   - Returns empty list on errors (graceful degradation)
+
+**Configuration**:
+```properties
+stag.script.path=./stag-main/stag.py
+stag.python.executable=python3
+```
+
+**Process Execution Flow**:
+1. Validate input photo file
+2. Read script path and Python executable from configuration
+3. Check if script exists (warn if missing, return empty list)
+4. Build ProcessBuilder with: `python3 stag.py <photo_path>`
+5. Set working directory to script directory
+6. Redirect error stream to output stream
+7. Start process and capture output
+8. Wait for completion with 30-second timeout
+9. Parse output into tag list
+10. Return tags or empty list on error
+
+**Output Parsing**:
+- **Comma-separated**: `outdoor,nature,landscape,sunset`
+- **Newline-separated**:
+  ```
+  outdoor
+  nature
+  landscape
+  sunset
+  ```
+- Automatically detects format (tries comma-separated first)
+- Trims whitespace from each tag
+- Removes empty tags
+
+**Error Handling**:
+- Missing photo file: returns empty list, logs warning
+- Script not found: returns empty list, logs warning (allows system to run without STAG)
+- Python not installed: returns empty list, logs error
+- Script crashes: returns empty list, logs error with output
+- Timeout: destroys process forcibly, returns empty list
+- Non-zero exit code: returns empty list, logs warning with output
+
+**Timeout Configuration**:
+- Default: 30 seconds
+- Process destroyed forcibly if timeout exceeded
+- Prevents hanging on problematic images or script issues
+
+**Integration Points**:
+- Called from PhotoProcessingService (Step 18)
+- Generated tags stored in tags and photo_tags tables
+- Executed for each new/changed photo during Git polling
+
+### Testing Summary
+
+All tests passing:
+- **Backend**: 131/131 tests passing (10 new StagService tests)
+- **Graceful degradation**: Tests pass whether STAG script is installed or not
+- **Total**: 131 backend tests ✅
+
+**Test Cases Verified**:
+1. Service creation and dependency injection
+2. Null/invalid file handling (returns empty list)
+3. Timeout handling (doesn't hang)
+4. Configuration access verified
+5. Script not found handled gracefully
+6. Special characters in file paths supported
+7. Comma-separated tag parsing structure
+8. Newline-separated tag parsing structure
+9. Empty output handled gracefully
+10. Concurrent calls don't cause issues
+
+### Limitations
+
+- External dependency on STAG Python script
+- Requires Python 3 to be installed
+- 30-second timeout may be too short for very large images
+- No batch processing support (one image at a time)
+- Output format must be comma-separated or newline-separated
+- No support for JSON or structured output formats
+- Script errors result in empty tag list (no partial results)
+
+### Expectations
+
+- STAG Python script must be at configured path
+- Python 3 must be installed and accessible
+- Script should accept image file path as single argument
+- Script should output tags to stdout
+- Script should exit with code 0 on success
+- Script should complete within 30 seconds
+- If script not available, system continues without AI tags (graceful degradation)
+
