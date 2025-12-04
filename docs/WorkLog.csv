@@ -75,3 +75,10 @@ Date,Time,Step Number,Step Name,Status
 2025-12-04,08:05,14,Git Repository Polling Service,CURRENT-TESTS
 2025-12-04,08:10,14,Git Repository Polling Service,ALL-TESTS
 2025-12-04,08:15,14,Git Repository Polling Service,DOCS
+2025-12-04,08:20,15,EXIF Data Extraction,DEV
+2025-12-04,08:25,15,EXIF Data Extraction,START-TESTS
+2025-12-04,12:00,15,EXIF Data Extraction,PLAN-CREATE
+2025-12-04,12:05,15,EXIF Data Extraction,PLAN-IMPLEMENT
+2025-12-04,13:00,15,EXIF Data Extraction,CURRENT-TESTS
+2025-12-04,13:04,15,EXIF Data Extraction,ALL-TESTS
+2025-12-04,13:10,15,EXIF Data Extraction,DOCS

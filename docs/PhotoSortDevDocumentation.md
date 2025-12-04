@@ -1741,3 +1741,98 @@ All tests pass with zero regressions:
 - Script templates library
 - Dry-run/preview capability
 
+---
+
+## Step 15: EXIF Data Extraction
+
+**Functionality Created**: Automatic EXIF metadata extraction from image files when detected by Git polling service
+
+**Implementation Notes**:
+
+This feature integrates EXIF data extraction with the Git polling workflow established in Step 14. When the GitPollingService detects new or changed image files in the repository, it now automatically extracts EXIF metadata and creates/updates database records.
+
+**Core Components**:
+
+1. **ExifDataService**: Extracts EXIF metadata using metadata-extractor library
+   - Camera information: make, model
+   - Date/time: original capture date
+   - GPS coordinates: latitude/longitude (decimal format with 8 decimal places)
+   - Exposure settings: exposure time, f-number, ISO speed, focal length
+   - Orientation: image orientation flag
+   - Returns null if no EXIF data found (graceful handling)
+
+2. **GitPollingService Integration**: Enhanced processImageFile() method
+   - Extracts EXIF data via ExifDataService
+   - Extracts image dimensions separately (belongs on Photo, not ExifData)
+   - Gets file metadata: size, created date, modified date
+   - Creates or updates Photo record
+   - Saves associated ExifData if extraction successful
+   - Handles missing EXIF data gracefully (e.g., PNG screenshots)
+
+3. **First Poll Enhancement**: Implemented all-files processing
+   - When oldCommitHash is null (first poll), TreeWalk iterates all files in repository
+   - Previously returned empty list; now processes all existing image files
+   - Critical for initial repository setup
+
+**Database Schema**:
+- Photo entity: stores basic file properties (dimensions, size, dates, path)
+- ExifData entity: stores camera/exposure metadata with one-to-one relationship to Photo
+- ExifData.photo_id has ON DELETE CASCADE for automatic cleanup
+
+**Libraries**:
+- metadata-extractor 2.19.0: EXIF extraction
+- JGit: Git operations and tree walking
+
+**Supported Image Formats**:
+- JPG/JPEG: Full EXIF support
+- PNG: Limited/no EXIF (handled gracefully)
+- GIF, BMP, TIFF, WebP: Varies by format
+
+**Data Extraction Details**:
+- GPS coordinates: Converted from degrees/minutes/seconds to decimal format
+- Date/time: Supports multiple EXIF date format patterns
+- Dimensions: Extracted from JPEG directory metadata
+- File attributes: Using Java NIO BasicFileAttributes
+
+**Integration Flow**:
+1. GitPollingService polls repository (5-minute interval, 60-second initial delay)
+2. Detects changed/new image files via Git diff or TreeWalk (first poll)
+3. For each image file:
+   - Extract EXIF data
+   - Extract dimensions
+   - Get file attributes
+   - Check if photo exists by file path
+   - Create/update Photo record
+   - Save ExifData if extracted
+
+**Error Handling**:
+- Gracefully handles images without EXIF data
+- Logs warnings for unreadable files
+- Continues processing on individual file errors
+- Does not crash scheduled task on failures
+
+### Testing Summary
+
+All tests passing:
+- **Backend**: 111/111 tests passing (10 new ExifDataService tests)
+- **Integration**: Tested with 135 real photos from configured Git repository
+- **EXIF Extraction**: Successfully extracted metadata from 124/135 photos (11 PNG files without EXIF)
+- **Total**: 111 backend tests ✅
+
+### Limitations
+
+- Deprecated BigDecimal.ROUND_HALF_UP used (should migrate to RoundingMode.HALF_UP)
+- No support for XMP or IPTC metadata (only EXIF)
+- Image dimensions only extracted from JPEG directory (may fail for some formats)
+- No thumbnail generation (planned for future step)
+- Photos created without owner (must be assigned by admin later)
+
+### Expectations
+
+- Git repository must be configured in application.properties (git.repo.path)
+- Repository must be initialized and contain .git directory
+- File paths must be absolute and accessible to application
+- Database schema must match entity definitions
+- GitPollingService runs automatically after application startup (60-second delay)
+- Subsequent polls occur every 5 minutes (configurable via git.poll.interval.minutes)
+

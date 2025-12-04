@@ -77,3 +77,17 @@ This document captures insights and lessons learned during the PhotoSort develop
 
 - **Problem**: JGit diff operations can be complex with multiple steps (tree iterators, parsers, diff formatting)
   **Approach to Improve**: Create helper methods for common JGit operations (e.g., `getCanonicalTreeParser()`, `detectChangedImageFiles()`). This makes the code more readable and reusable. Document each step of the Git operations for future maintenance.
+
+## Step 15: EXIF Data Extraction
+
+- **Problem**: Image dimensions (width/height) should be stored with Photo entity, not ExifData entity
+  **Approach to Improve**: Keep clear separation of concerns - ExifData entity is specifically for camera/exposure metadata (make, model, GPS, exposure settings), while basic image properties (dimensions, file size, dates) belong on the Photo entity. Extract image dimensions separately using JpegDirectory when processing images.
+
+- **Problem**: First poll of Git repository needs special handling to process all existing files
+  **Approach to Improve**: In GitPollingService.detectChangedImageFiles(), when oldCommitHash is null (first poll), use TreeWalk to iterate through all files in the current commit tree. This ensures existing images are processed on initial setup.
+
+- **Problem**: Not all image files have EXIF data (e.g., PNG screenshots, edited images)
+  **Approach to Improve**: Handle null ExifData gracefully in processImageFile(). Create Photo record regardless of whether EXIF data exists. Only save ExifData if extraction returns non-null result. This allows the system to track all images while extracting metadata when available.
+
+- **Problem**: EXIF Data extraction uses deprecated BigDecimal rounding mode constant
+  **Approach to Improve**: BigDecimal.ROUND_HALF_UP is deprecated in favor of RoundingMode.HALF_UP. Update ExifDataService to use `setScale(8, RoundingMode.HALF_UP)` instead of the deprecated constant for GPS coordinate precision.
