@@ -40,12 +40,13 @@ public class ConfigService {
 
     /**
      * Get property value, checking overrides first, then environment
+     * Made public for use by other services (e.g., GitPollingService)
      *
      * @param key Property key
      * @param defaultValue Default value if not found
      * @return Property value
      */
-    private String getProperty(String key, String defaultValue) {
+    public String getProperty(String key, String defaultValue) {
         if (configOverrides.containsKey(key)) {
             return configOverrides.get(key);
         }

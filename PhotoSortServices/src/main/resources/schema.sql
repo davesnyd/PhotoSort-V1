@@ -2,6 +2,7 @@
 -- PostgreSQL Database Schema for PhotoSort Application
 
 -- Drop tables if they exist (for clean setup)
+DROP TABLE IF EXISTS git_poll_state CASCADE;
 DROP TABLE IF EXISTS script_execution_log CASCADE;
 DROP TABLE IF EXISTS scripts CASCADE;
 DROP TABLE IF EXISTS user_column_preferences CASCADE;
@@ -162,3 +163,15 @@ CREATE TABLE script_execution_log (
 
 CREATE INDEX idx_script_execution_log_script_id ON script_execution_log(script_id);
 CREATE INDEX idx_script_execution_log_execution_time ON script_execution_log(execution_time);
+
+-- Git Poll State table (Step 14)
+CREATE TABLE git_poll_state (
+    poll_state_id BIGSERIAL PRIMARY KEY,
+    repository_path VARCHAR(1000) UNIQUE NOT NULL,
+    last_commit_hash VARCHAR(40),
+    last_poll_time TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_git_poll_state_repository_path ON git_poll_state(repository_path);

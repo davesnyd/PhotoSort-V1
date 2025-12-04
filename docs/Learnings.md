@@ -63,3 +63,17 @@ This document captures insights and lessons learned during the PhotoSort develop
 
 - **Problem**: Tests that call ConfigService.updateConfiguration() persist test data to application.properties file, corrupting production configuration
   **Approach to Improve**: Tests should either: (1) Mock the ConfigService.saveToPropertiesFile() method to prevent file writes during testing, OR (2) Use a test-specific properties file location that doesn't affect src/main/resources/application.properties. The current implementation writes directly to the production properties file during tests, which is a critical issue that corrupts configuration values.
+
+## Step 14: Git Repository Polling Service
+
+- **Problem**: @Scheduled annotation timing units can be confusing (milliseconds vs minutes vs seconds)
+  **Approach to Improve**: Use SpEL expressions with clear unit conversion in @Scheduled annotations. For example: `#{${git.poll.interval.minutes:5} * 60 * 1000}` makes it clear that configuration is in minutes but scheduling is in milliseconds. Always document the expected units in configuration properties.
+
+- **Problem**: Git operations require careful error handling to prevent service from crashing on repository issues
+  **Approach to Improve**: Wrap all Git operations in try-catch blocks and log errors gracefully. Return null or empty results on failures rather than throwing exceptions. This allows the scheduled task to continue running even when Git operations fail temporarily.
+
+- **Problem**: ConfigService methods may need to be accessed by other services but are initially private
+  **Approach to Improve**: Design service methods with appropriate visibility from the start. If a method might be useful to other services, make it public. Private methods should only be used for internal implementation details that won't be needed elsewhere.
+
+- **Problem**: JGit diff operations can be complex with multiple steps (tree iterators, parsers, diff formatting)
+  **Approach to Improve**: Create helper methods for common JGit operations (e.g., `getCanonicalTreeParser()`, `detectChangedImageFiles()`). This makes the code more readable and reusable. Document each step of the Git operations for future maintenance.
