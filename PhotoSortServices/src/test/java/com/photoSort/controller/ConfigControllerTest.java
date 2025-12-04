@@ -5,6 +5,7 @@ package com.photoSort.controller;
 
 import com.photoSort.dto.ConfigurationDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,6 +14,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Properties;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,6 +38,32 @@ public class ConfigControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    /**
+     * Set up test properties file before each test
+     * This prevents tests from corrupting the production application.properties
+     */
+    @BeforeEach
+    public void setUp() throws IOException {
+        Properties testProps = new Properties();
+        testProps.setProperty("spring.datasource.url", "jdbc:postgresql://localhost:5432/TestDatabase");
+        testProps.setProperty("spring.datasource.username", "testuser");
+        testProps.setProperty("spring.datasource.password", "testpass");
+        testProps.setProperty("git.repo.path", "/test/repo");
+        testProps.setProperty("git.repo.url", "https://github.com/test/repo.git");
+        testProps.setProperty("git.username", "testuser");
+        testProps.setProperty("git.token", "testtoken");
+        testProps.setProperty("git.poll.interval.minutes", "5");
+        testProps.setProperty("spring.security.oauth2.client.registration.google.client-id", "test-client-id");
+        testProps.setProperty("spring.security.oauth2.client.registration.google.client-secret", "test-secret");
+        testProps.setProperty("spring.security.oauth2.client.registration.google.redirect-uri", "http://localhost:8080/oauth2/callback");
+        testProps.setProperty("stag.script.path", "./test-stag.py");
+        testProps.setProperty("stag.python.executable", "python3");
+
+        try (FileWriter writer = new FileWriter("/tmp/test-application.properties")) {
+            testProps.store(writer, "Test Configuration");
+        }
+    }
 
     /**
      * Test Case 1: Verify only admins can access configuration page

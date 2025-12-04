@@ -5,6 +5,7 @@ package com.photoSort.service;
 
 import com.photoSort.dto.ConfigurationDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +28,9 @@ import java.util.Properties;
 public class ConfigService {
 
     private static final String REDACTED_PASSWORD = "********";
-    private static final String PROPERTIES_FILE = "src/main/resources/application.properties";
+
+    @Value("${config.properties.file:src/main/resources/application.properties}")
+    private String propertiesFile;
 
     // In-memory map to store configuration overrides (takes precedence over application.properties)
     private final Map<String, String> configOverrides = new HashMap<>();
@@ -180,7 +183,7 @@ public class ConfigService {
         try {
             // Load existing properties from file
             Properties properties = new Properties();
-            try (FileInputStream input = new FileInputStream(PROPERTIES_FILE)) {
+            try (FileInputStream input = new FileInputStream(propertiesFile)) {
                 properties.load(input);
             }
 
@@ -190,7 +193,7 @@ public class ConfigService {
             }
 
             // Write properties back to file with header comment
-            try (FileOutputStream output = new FileOutputStream(PROPERTIES_FILE)) {
+            try (FileOutputStream output = new FileOutputStream(propertiesFile)) {
                 properties.store(output, "Updated by PhotoSort Configuration Management");
             }
 

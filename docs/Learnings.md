@@ -60,3 +60,6 @@ This document captures insights and lessons learned during the PhotoSort develop
 
 - **Problem**: Test configuration object creation is repetitive across multiple test cases
   **Approach to Improve**: Create a helper method `createTestConfiguration()` that returns a properly initialized ConfigurationDTO with all nested objects. This reduces code duplication and makes tests more maintainable.
+
+- **Problem**: Tests that call ConfigService.updateConfiguration() persist test data to application.properties file, corrupting production configuration
+  **Approach to Improve**: Tests should either: (1) Mock the ConfigService.saveToPropertiesFile() method to prevent file writes during testing, OR (2) Use a test-specific properties file location that doesn't affect src/main/resources/application.properties. The current implementation writes directly to the production properties file during tests, which is a critical issue that corrupts configuration values.
