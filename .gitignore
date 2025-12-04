@@ -8,3 +8,19 @@
 # Editor backups
 *~
 original.*
+
+# Maven build artifacts
+target/
+*.jar
+*.war
+*.ear
+
+# Temporary files
+*.log
+*.tmp
+SESSION_NOTES.md
+SESSION_RESUME.md
+NEXT_STEPS.md
+
+# Scripts
+*.sh

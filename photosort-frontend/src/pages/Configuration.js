@@ -48,6 +48,13 @@ const Configuration = () => {
     }));
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -107,6 +114,7 @@ const Configuration = () => {
               type="text"
               value={config?.database?.uri || ''}
               onChange={(e) => handleInputChange('database', 'uri', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -116,6 +124,7 @@ const Configuration = () => {
               type="text"
               value={config?.database?.username || ''}
               onChange={(e) => handleInputChange('database', 'username', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -125,6 +134,7 @@ const Configuration = () => {
               type="password"
               value={config?.database?.password || ''}
               onChange={(e) => handleInputChange('database', 'password', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
               placeholder="Leave as ******** to keep unchanged"
             />
@@ -140,6 +150,7 @@ const Configuration = () => {
               type="text"
               value={config?.git?.repoPath || ''}
               onChange={(e) => handleInputChange('git', 'repoPath', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -149,6 +160,7 @@ const Configuration = () => {
               type="text"
               value={config?.git?.url || ''}
               onChange={(e) => handleInputChange('git', 'url', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -158,6 +170,7 @@ const Configuration = () => {
               type="text"
               value={config?.git?.username || ''}
               onChange={(e) => handleInputChange('git', 'username', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -167,6 +180,7 @@ const Configuration = () => {
               type="password"
               value={config?.git?.token || ''}
               onChange={(e) => handleInputChange('git', 'token', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
               placeholder="Leave as ******** to keep unchanged"
             />
@@ -177,6 +191,7 @@ const Configuration = () => {
               type="number"
               value={config?.git?.pollIntervalMinutes || 5}
               onChange={(e) => handleInputChange('git', 'pollIntervalMinutes', parseInt(e.target.value))}
+              onKeyDown={handleKeyDown}
               style={styles.input}
               min="1"
             />
@@ -192,6 +207,7 @@ const Configuration = () => {
               type="text"
               value={config?.oauth?.clientId || ''}
               onChange={(e) => handleInputChange('oauth', 'clientId', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -201,6 +217,7 @@ const Configuration = () => {
               type="password"
               value={config?.oauth?.clientSecret || ''}
               onChange={(e) => handleInputChange('oauth', 'clientSecret', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
               placeholder="Leave as ******** to keep unchanged"
             />
@@ -211,6 +228,7 @@ const Configuration = () => {
               type="text"
               value={config?.oauth?.redirectUri || ''}
               onChange={(e) => handleInputChange('oauth', 'redirectUri', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -225,6 +243,7 @@ const Configuration = () => {
               type="text"
               value={config?.stag?.scriptPath || ''}
               onChange={(e) => handleInputChange('stag', 'scriptPath', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
@@ -234,6 +253,7 @@ const Configuration = () => {
               type="text"
               value={config?.stag?.pythonExecutable || ''}
               onChange={(e) => handleInputChange('stag', 'pythonExecutable', e.target.value)}
+              onKeyDown={handleKeyDown}
               style={styles.input}
             />
           </div>
