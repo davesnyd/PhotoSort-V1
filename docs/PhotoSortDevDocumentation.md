@@ -2033,3 +2033,140 @@ All tests passing:
 - Script should complete within 30 seconds
 - If script not available, system continues without AI tags (graceful degradation)
 
+
+---
+
+## Step 18: Photo Processing Pipeline
+
+**Functionality Created**: Orchestrator service that processes photos through complete pipeline integrating all previous services
+
+This service acts as the central orchestrator for photo processing, coordinating EXIF extraction, metadata parsing, STAG tagging, thumbnail generation, and database persistence. It ensures atomic transactions and handles partial failures gracefully.
+
+**Core Components**:
+
+1. **PhotoProcessingService**: Main orchestrator service
+   - Coordinates all photo processing steps
+   - Uses @Transactional for atomic database operations
+   - Handles duplicate photo detection
+   - Processes EXIF data, metadata files, and STAG tags
+   - Manages Tag and PhotoTag associations
+   - Logs script execution
+   - Provides graceful degradation on partial failures
+
+2. **GitPollingService Integration**: Refactored to use PhotoProcessingService
+   - Simplified from direct database manipulation to single method call
+   - Removed duplicate logic (EXIF extraction, photo record creation)
+   - Now delegates all processing to PhotoProcessingService
+
+**Processing Pipeline**:
+
+1. **Determine Owner**: Look up user by commit author email, fallback to first admin
+2. **Duplicate Detection**: Query Photo by file_path - update if exists, create if new
+3. **Extract File Metadata**: File size, creation date, modification date using BasicFileAttributes
+4. **Extract Image Dimensions**: Use metadata-extractor JpegDirectory for width/height
+5. **Generate Thumbnail**: Placeholder (returns null for now, to be implemented in Step 20)
+6. **Save Photo Record**: Create or update with all attributes
+7. **Extract EXIF Data**: Call ExifDataService.extractExifData()
+8. **Parse Metadata File**: Check for .metadata file, call MetadataParserService if exists
+9. **Generate STAG Tags**: Call StagService.generateTags()
+10. **Execute Custom Scripts**: Placeholder for Step 19 (not yet implemented)
+11. **Save Tags**: Find or create Tag records, create PhotoTag associations
+12. **Log Execution**: Create ScriptExecutionLog entries for STAG script
+
+**Transaction Management**:
+
+The processPhoto() method uses @Transactional to ensure:
+- All database operations succeed or rollback together
+- No partial state left in database on errors
+- Automatic rollback on uncaught exceptions
+- Proper foreign key constraint handling
+
+**Error Handling Strategy**:
+
+- **EXIF Extraction Failure**: Log warning, continue processing (EXIF is optional)
+- **Metadata File Missing**: Continue processing (metadata files are optional)
+- **STAG Script Failure**: Log warning, create failure log entry, continue processing
+- **Database Constraint Violation**: Transaction rollback, exception propagated
+- **File I/O Errors**: Exception propagated, transaction rollback
+
+**Helper Methods**:
+
+1. **findOrCreateUser(email)**: Looks up user by email, returns first admin if not found
+2. **findOrCreateTag(tagValue)**: Queries TagRepository, creates new tag if not exists
+3. **findOrCreateMetadataField(fieldName)**: Queries MetadataFieldRepository, creates if not exists
+4. **extractImageDimensions(file)**: Uses metadata-extractor JpegDirectory for dimensions
+5. **generateThumbnail(file)**: Placeholder returning null (Step 20)
+6. **hasExifData(exifData)**: Checks if ExifData has meaningful data
+7. **copyExifData(source, dest)**: Copies EXIF fields when updating existing record
+8. **processExifData(file, photo)**: Extract and save/update EXIF data
+9. **processMetadataFile(file, photo)**: Parse and save metadata fields and tags
+10. **processStagTags(file, photo)**: Generate and save STAG tags
+11. **processCustomScripts(file, photo)**: Placeholder for Step 19
+12. **createPhotoTagAssociation(photo, tag)**: Create PhotoTag if doesn't exist
+13. **logScriptExecution(photo, scriptName, status, error)**: Log to script_execution_log
+
+**Repository Methods Used**:
+
+- PhotoRepository: findByFilePath(), save()
+- ExifDataRepository: findByPhoto(), save()
+- PhotoMetadataRepository: findByPhotoAndField(), save()
+- TagRepository: findByTagValue(), save()
+- PhotoTagRepository: findByPhotoAndTag(), save()
+- MetadataFieldRepository: findByFieldName(), save()
+- ScriptExecutionLogRepository: save()
+- UserRepository: findByEmail(), findAll()
+- ScriptRepository: findByScriptName()
+
+**Database Operations**:
+
+1. **Photo Record**: Created or updated (findByFilePath determines which)
+2. **ExifData Record**: Created or updated (findByPhoto determines which)
+3. **PhotoMetadata Records**: Multiple records, one per metadata field
+4. **Tag Records**: Find existing or create new (prevents duplicates)
+5. **PhotoTag Associations**: Create only if doesn't exist (findByPhotoAndTag prevents duplicates)
+6. **MetadataField Records**: Find existing or create new (prevents duplicates)
+7. **ScriptExecutionLog**: Created for STAG script execution
+
+### Testing Summary
+
+All tests passing:
+- **Backend**: 144/144 tests passing (13 new PhotoProcessingService tests + 131 existing)
+- **Complete Pipeline**: All components integrated and tested
+- **Total**: 144 backend tests ✅
+
+**Test Cases Verified**:
+1. Service creation and dependency injection
+2. Complete pipeline with EXIF, metadata file, and STAG tags
+3. Photo record created with correct attributes
+4. EXIF data saved correctly
+5. Custom metadata saved correctly
+6. STAG tags saved correctly
+7. Metadata file tags saved correctly
+8. Thumbnail generation integrated (placeholder)
+9. Photo without EXIF data handled gracefully
+10. Photo without metadata file handled gracefully
+11. STAG script failure handled gracefully (continue processing)
+12. Transaction rollback structure verified
+13. Duplicate photo detection working (same file_path)
+14. Execution logging integrated
+
+### Limitations
+
+- **Thumbnail Generation**: Placeholder (returns null) - will be implemented in Step 20
+- **Custom Script Execution**: Placeholder - will be implemented in Step 19
+- **Commit Author**: Currently passes null (defaults to first admin) - could be enhanced to extract from Git commit
+- **Batch Processing**: Processes one photo at a time (no parallel processing)
+- **Progress Tracking**: No progress callbacks or status updates during processing
+- **Partial Rollback**: @Transactional rolls back entire operation on error (all-or-nothing)
+
+### Expectations
+
+- User with ADMIN role must exist in database (getDefaultAdmin requires it)
+- All referenced services must be available (ExifDataService, MetadataParserService, StagService)
+- Photo file must exist and be readable
+- File system access required for reading photos and .metadata files
+- Database must support transactions (PostgreSQL)
+- Unique constraint on photos.file_path enforced by database
+- Unique constraint on tags.tag_value enforced by database
+- Unique constraint on metadata_fields.field_name enforced by database
+- Optional components (EXIF, metadata files, STAG) degrade gracefully when unavailable

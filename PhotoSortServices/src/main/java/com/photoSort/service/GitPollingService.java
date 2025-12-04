@@ -3,15 +3,8 @@
  */
 package com.photoSort.service;
 
-import com.drew.imaging.ImageMetadataReader;
-import com.drew.metadata.Metadata;
-import com.drew.metadata.jpeg.JpegDirectory;
-import com.photoSort.model.ExifData;
 import com.photoSort.model.GitPollState;
-import com.photoSort.model.Photo;
-import com.photoSort.repository.ExifDataRepository;
 import com.photoSort.repository.GitPollStateRepository;
-import com.photoSort.repository.PhotoRepository;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -34,11 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -65,13 +54,7 @@ public class GitPollingService {
     private GitPollStateRepository gitPollStateRepository;
 
     @Autowired
-    private ExifDataService exifDataService;
-
-    @Autowired
-    private PhotoRepository photoRepository;
-
-    @Autowired
-    private ExifDataRepository exifDataRepository;
+    private PhotoProcessingService photoProcessingService;
 
     /**
      * Poll Git repository at configured interval
@@ -286,7 +269,8 @@ public class GitPollingService {
     }
 
     /**
-     * Process image file - extract EXIF data and create/update photo record
+     * Process image file using PhotoProcessingService (Step 18)
+     * Delegates to PhotoProcessingService for complete pipeline processing
      */
     private void processImageFile(File imageFile) {
         if (!imageFile.exists() || !imageFile.isFile()) {
@@ -295,84 +279,10 @@ public class GitPollingService {
         }
 
         try {
-            logger.info("Processing image file: {}", imageFile.getName());
-
-            // Extract EXIF data
-            ExifData exifData = exifDataService.extractExifData(imageFile);
-            if (exifData != null) {
-                logger.debug("Extracted EXIF data from: {}", imageFile.getName());
-            } else {
-                logger.debug("No EXIF data found in: {}", imageFile.getName());
-            }
-
-            // Extract image dimensions (not part of EXIF data, but file metadata)
-            Integer imageWidth = null;
-            Integer imageHeight = null;
-            try {
-                Metadata metadata = ImageMetadataReader.readMetadata(imageFile);
-                JpegDirectory jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory.class);
-                if (jpegDirectory != null) {
-                    imageWidth = jpegDirectory.getImageWidth();
-                    imageHeight = jpegDirectory.getImageHeight();
-                }
-            } catch (Exception e) {
-                logger.debug("Could not extract image dimensions from {}: {}",
-                    imageFile.getName(), e.getMessage());
-            }
-
-            // Get file metadata
-            BasicFileAttributes attrs = Files.readAttributes(imageFile.toPath(), BasicFileAttributes.class);
-            Long fileSize = attrs.size();
-            LocalDateTime fileCreatedDate = LocalDateTime.ofInstant(
-                Instant.ofEpochMilli(attrs.creationTime().toMillis()), ZoneId.systemDefault());
-            LocalDateTime fileModifiedDate = LocalDateTime.ofInstant(
-                Instant.ofEpochMilli(attrs.lastModifiedTime().toMillis()), ZoneId.systemDefault());
-
-            // Check if photo already exists
-            String filePath = imageFile.getAbsolutePath();
-            Optional<Photo> existingPhotoOpt = photoRepository.findByFilePath(filePath);
-
-            Photo photo;
-            if (existingPhotoOpt.isPresent()) {
-                // Update existing photo
-                photo = existingPhotoOpt.get();
-                logger.debug("Updating existing photo: {}", photo.getFileName());
-            } else {
-                // Create new photo
-                photo = new Photo();
-                photo.setFilePath(filePath);
-                logger.debug("Creating new photo record for: {}", imageFile.getName());
-            }
-
-            // Set photo properties
-            photo.setFileName(imageFile.getName());
-            photo.setFileSize(fileSize);
-            photo.setFileCreatedDate(fileCreatedDate);
-            photo.setFileModifiedDate(fileModifiedDate);
-            photo.setImageWidth(imageWidth);
-            photo.setImageHeight(imageHeight);
-            // Note: owner will be set to null for now (will be assigned by admin or script later)
-            // Note: isPublic defaults to false (private by default)
-
-            // Save photo
-            photo = photoRepository.save(photo);
-            logger.info("Saved photo record: {} (ID: {})", photo.getFileName(), photo.getPhotoId());
-
-            // Save EXIF data if extracted
-            if (exifData != null) {
-                // Check if EXIF data already exists for this photo
-                Optional<ExifData> existingExifOpt = exifDataRepository.findByPhoto(photo);
-                if (existingExifOpt.isPresent()) {
-                    // Delete old EXIF data (we'll replace it with new)
-                    exifDataRepository.delete(existingExifOpt.get());
-                }
-
-                // Associate EXIF data with photo and save
-                exifData.setPhoto(photo);
-                exifDataRepository.save(exifData);
-                logger.info("Saved EXIF data for photo: {}", photo.getFileName());
-            }
-
+            // Delegate to PhotoProcessingService for complete pipeline
+            // Pass null for commit author - will default to first admin user
+            photoProcessingService.processPhoto(imageFile, null);
+            logger.info("Successfully processed image file: {}", imageFile.getName());
         } catch (Exception e) {
             logger.error("Error processing image file {}: {}", imageFile.getName(), e.getMessage(), e);
         }

@@ -47,4 +47,13 @@ public interface PhotoTagRepository extends JpaRepository<PhotoTag, Long> {
      * @param tag The tag
      */
     void deleteByTag(Tag tag);
+
+    /**
+     * Find a specific photo-tag association.
+     *
+     * @param photo The photo
+     * @param tag The tag
+     * @return Optional containing the photo-tag association if found
+     */
+    java.util.Optional<PhotoTag> findByPhotoAndTag(Photo photo, Tag tag);
 }
