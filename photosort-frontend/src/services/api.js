@@ -8,13 +8,13 @@
 import axios from 'axios';
 
 // Create Axios instance with base configuration
-// TEMPORARY: Using port 8081 and disabling auth interceptors for testing
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8081',
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Important for session-based auth
+  timeout: 5000, // 5 second timeout to prevent long waits
 });
 
 // Helper function to get CSRF token from cookies
@@ -60,10 +60,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Unauthorized - redirect to login
+      // Unauthorized - clean up auth data but don't redirect
+      // (let the components handle navigation based on auth state)
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

@@ -31,37 +31,64 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Check authentication status on component mount only
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      if (SKIP_AUTH) {
+        // Skip authentication check in test mode
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Session-based auth - check with backend
+        const userData = await authService.getCurrentUser();
+        if (userData) {
+          setUser(userData);
+          setIsAuthenticated(true);
+          // Store user data for convenience (but auth is session-based)
+          localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        // Not authenticated or session expired
+        console.log('Authentication check failed:', error.message);
+        setUser(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []); // Empty dependency array - only run on mount
+
   const checkAuthStatus = useCallback(async () => {
     if (SKIP_AUTH) {
-      // Skip authentication check in test mode
-      setLoading(false);
       return;
     }
 
     try {
-      // Session-based auth - check with backend
       const userData = await authService.getCurrentUser();
       if (userData) {
         setUser(userData);
         setIsAuthenticated(true);
-        // Store user data for convenience (but auth is session-based)
         localStorage.setItem('user', JSON.stringify(userData));
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      // Not authenticated or session expired
       setUser(null);
       setIsAuthenticated(false);
       localStorage.removeItem('user');
       localStorage.removeItem('authToken');
-    } finally {
-      setLoading(false);
     }
   }, []);
-
-  // Check authentication status on component mount
-  useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
 
   const login = (userData, token) => {
     authService.storeAuth(userData, token);

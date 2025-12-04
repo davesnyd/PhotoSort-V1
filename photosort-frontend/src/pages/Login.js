@@ -11,23 +11,14 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
 
 const Login = () => {
-  const { isAuthenticated, loginWithGoogle, loading } = useAuth();
+  const { isAuthenticated, loginWithGoogle } = useAuth();
 
   // Redirect to home if already authenticated
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
-  if (loading) {
-    return (
-      <div className="login-container">
-        <div className="login-box">
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Always show the login form (no loading state to avoid flicker)
   return (
     <div className="login-container">
       <div className="login-box">

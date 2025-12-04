@@ -33,12 +33,12 @@ const Navigation = () => {
   return (
     <nav className="navigation">
       <div className="nav-container">
-        <Link to="/" className="nav-brand">
+        <Link to="/home" className="nav-brand">
           PhotoSort
         </Link>
 
         <div className="nav-links">
-          <Link to="/" className="nav-link">
+          <Link to="/home" className="nav-link">
             Home
           </Link>
 

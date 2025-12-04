@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import OAuthCallback from './pages/OAuthCallback';
 import Home from './pages/Home';
@@ -40,12 +41,13 @@ function App() {
             <Navigation />
             <Routes>
               {/* Public routes */}
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/auth/callback" element={<OAuthCallback />} />
 
               {/* Protected routes */}
               <Route
-                path="/"
+                path="/home"
                 element={
                   <ProtectedRoute>
                     <Home />
