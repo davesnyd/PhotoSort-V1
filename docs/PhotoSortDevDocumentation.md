@@ -1836,3 +1836,92 @@ All tests passing:
 - GitPollingService runs automatically after application startup (60-second delay)
 - Subsequent polls occur every 5 minutes (configurable via git.poll.interval.minutes)
 
+---
+
+## Step 16: Metadata File Parsing
+
+**Functionality Created**: Parse optional .metadata files containing custom metadata for photos
+
+**Implementation Notes**:
+
+This service reads simple key=value format files that can accompany photos to provide custom metadata. The parser handles a special "tags" field differently (comma-separated list) and creates regular string fields for all other metadata.
+
+**Core Components**:
+
+1. **MetadataParserService**: Parses .metadata files
+   - Reads file line by line
+   - Parses key=value format (splits on first '=' to allow '=' in values)
+   - Special handling for "tags" field: splits on comma, trims whitespace, returns List<String>
+   - Regular fields returned as String values
+   - Returns Map<String, Object> where values are either String or List<String>
+
+**File Format**:
+```
+Title=Family Vacation 2024
+Location=Grand Canyon, Arizona
+tags=vacation,family,nature,landscape
+Event=Summer Trip
+People=John,Jane,Kids
+```
+
+**Parsing Rules**:
+- Each line: `fieldname=value`
+- Empty lines skipped
+- Lines without '=' skipped with warning
+- Lines with empty keys (e.g., `=value`) skipped with warning
+- Duplicate keys: last value wins
+- Empty values: stored as empty string
+- Special characters and Unicode: preserved as-is
+- Only splits on first '=' (allows '=' in values like `Formula=E=mc^2`)
+
+**Tags Field Special Handling**:
+- Comma-separated values split into list
+- Each tag trimmed of leading/trailing whitespace
+- Empty tags removed
+- Returned as `List<String>` instead of String
+
+**Error Handling**:
+- Missing file: returns empty map (not an error)
+- Malformed lines: logged as warning, line skipped
+- IO errors: logged as error, returns partial results or empty map
+
+**Integration Points**:
+- Will be called from PhotoProcessingService (Step 18)
+- Results stored in metadata_fields and photo_metadata tables
+- Tags extracted and stored in tags and photo_tags tables
+
+### Testing Summary
+
+All tests passing:
+- **Backend**: 121/121 tests passing (10 new MetadataParserService tests)
+- **Test Coverage**: All parsing scenarios including Unicode, special characters, malformed data
+- **Total**: 121 backend tests ✅
+
+**Test Cases Verified**:
+1. Well-formatted .metadata files parsed correctly
+2. Tags field parsed as comma-separated list
+3. Tags with extra whitespace trimmed properly
+4. Missing files return empty map (graceful handling)
+5. Malformed lines skipped with warnings
+6. Duplicate keys: last value wins
+7. Empty values stored as empty strings
+8. Special characters preserved (@, #, :, !, ?, \)
+9. Unicode/international characters supported (Chinese, Portuguese, French)
+10. Equals sign in values handled correctly
+
+### Limitations
+
+- No support for multi-line values
+- No support for escaped characters or quotes
+- No support for comments in .metadata files
+- File must use UTF-8 encoding for international characters
+- Case-sensitive field names (Title ≠ title)
+
+### Expectations
+
+- .metadata files must be in same directory as photo
+- Files should use UTF-8 encoding
+- One key=value pair per line
+- Special "tags" field for comma-separated tags
+- Service is stateless - no caching of parsed results
+
