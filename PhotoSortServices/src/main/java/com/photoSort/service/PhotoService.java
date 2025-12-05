@@ -86,10 +86,24 @@ public class PhotoService {
         if (pageable.getSort().isSorted()) {
             List<Order> orders = new ArrayList<>();
             pageable.getSort().forEach(order -> {
-                if (order.isAscending()) {
-                    orders.add(cb.asc(photo.get(order.getProperty())));
+                String property = order.getProperty();
+
+                // Handle special case: ownerDisplayName is a computed field
+                // Sort by owner.displayName instead
+                if ("ownerDisplayName".equals(property)) {
+                    Join<Photo, User> ownerJoin = photo.join("owner");
+                    if (order.isAscending()) {
+                        orders.add(cb.asc(ownerJoin.get("displayName")));
+                    } else {
+                        orders.add(cb.desc(ownerJoin.get("displayName")));
+                    }
                 } else {
-                    orders.add(cb.desc(photo.get(order.getProperty())));
+                    // Normal sorting for direct Photo fields
+                    if (order.isAscending()) {
+                        orders.add(cb.asc(photo.get(property)));
+                    } else {
+                        orders.add(cb.desc(photo.get(property)));
+                    }
                 }
             });
             query.orderBy(orders);
@@ -182,10 +196,24 @@ public class PhotoService {
         if (pageable.getSort().isSorted()) {
             List<Order> orders = new ArrayList<>();
             pageable.getSort().forEach(order -> {
-                if (order.isAscending()) {
-                    orders.add(cb.asc(photo.get(order.getProperty())));
+                String property = order.getProperty();
+
+                // Handle special case: ownerDisplayName is a computed field
+                // Sort by owner.displayName instead
+                if ("ownerDisplayName".equals(property)) {
+                    Join<Photo, User> ownerJoin = photo.join("owner");
+                    if (order.isAscending()) {
+                        orders.add(cb.asc(ownerJoin.get("displayName")));
+                    } else {
+                        orders.add(cb.desc(ownerJoin.get("displayName")));
+                    }
                 } else {
-                    orders.add(cb.desc(photo.get(order.getProperty())));
+                    // Normal sorting for direct Photo fields
+                    if (order.isAscending()) {
+                        orders.add(cb.asc(photo.get(property)));
+                    } else {
+                        orders.add(cb.desc(photo.get(property)));
+                    }
                 }
             });
             query.orderBy(orders);

@@ -12,8 +12,16 @@ import DataTable from './DataTable';
 import photoService from '../services/photoService';
 import '../styles/PhotoTable.css';
 
-const PhotoTable = ({ photos, onSortChange, currentSort }) => {
+const PhotoTable = ({ photos, onSortChange, currentSort, paginationState }) => {
   const navigate = useNavigate();
+
+  // Save pagination state before navigating to photo detail
+  const handlePhotoClick = useCallback((photoId) => {
+    if (paginationState) {
+      sessionStorage.setItem('photoListState', JSON.stringify(paginationState));
+    }
+    navigate(`/photo/${photoId}`);
+  }, [navigate, paginationState]);
 
   /**
    * Format date for display
@@ -68,7 +76,7 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
               alt={row.fileName}
               className="photo-thumbnail"
               style={{ cursor: 'pointer' }}
-              onClick={() => navigate(`/photo/${row.photoId}`)}
+              onClick={() => handlePhotoClick(row.photoId)}
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/placeholder-image.png';
@@ -86,7 +94,7 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
       render: (row, value) => (
         <span
           style={{ cursor: 'pointer', color: '#0066cc' }}
-          onClick={() => navigate(`/photo/${row.photoId}`)}
+          onClick={() => handlePhotoClick(row.photoId)}
         >
           {value}
         </span>

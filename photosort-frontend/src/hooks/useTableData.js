@@ -16,20 +16,36 @@ import { useState, useEffect, useCallback } from 'react';
  * @returns {Object} Table state and handlers
  */
 const useTableData = (fetchFunction, initialSort = { field: 'id', direction: 'asc' }, initialPageSize = 10) => {
+  // Check for saved pagination state from sessionStorage
+  const getSavedState = () => {
+    try {
+      const saved = sessionStorage.getItem('photoListState');
+      if (saved) {
+        sessionStorage.removeItem('photoListState'); // Clear after reading
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Error reading saved state:', e);
+    }
+    return null;
+  };
+
+  const savedState = getSavedState();
+
   // Data state
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(0);
+  // Pagination state - restore from savedState if available
+  const [currentPage, setCurrentPage] = useState(savedState?.currentPage ?? 0);
   const [pageSize] = useState(initialPageSize);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Sorting state
-  const [sortBy, setSortBy] = useState(initialSort.field);
-  const [sortDir, setSortDir] = useState(initialSort.direction);
+  // Sorting state - restore from savedState if available
+  const [sortBy, setSortBy] = useState(savedState?.sortBy ?? initialSort.field);
+  const [sortDir, setSortDir] = useState(savedState?.sortDir ?? initialSort.direction);
 
   // Search state
   const [searchMode, setSearchMode] = useState('none'); // 'none', 'quick', 'advanced'

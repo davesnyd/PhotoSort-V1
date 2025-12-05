@@ -56,6 +56,13 @@ const Photos = () => {
   // Memoize currentSort object to prevent unnecessary re-renders
   const currentSort = useMemo(() => ({ field: sortBy, direction: sortDir }), [sortBy, sortDir]);
 
+  // Memoize pagination state to pass to PhotoTable
+  const paginationState = useMemo(() => ({
+    currentPage,
+    sortBy,
+    sortDir
+  }), [currentPage, sortBy, sortDir]);
+
   return (
     <TablePage title={title} subtitle={subtitle}>
       <SearchControls
@@ -81,6 +88,7 @@ const Photos = () => {
             photos={photos}
             onSortChange={handleSortChange}
             currentSort={currentSort}
+            paginationState={paginationState}
           />
 
           <PaginationControls
