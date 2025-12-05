@@ -72,6 +72,9 @@ public class PhotoProcessingService {
     @Autowired
     private ScriptRepository scriptRepository;
 
+    @Autowired
+    private ThumbnailService thumbnailService;
+
     /**
      * Process a photo through the complete pipeline
      *
@@ -119,8 +122,8 @@ public class PhotoProcessingService {
                 photo.setImageHeight(dimensions[1]);
             }
 
-            // Step 5: Generate thumbnail (placeholder)
-            String thumbnailPath = generateThumbnail(photoFile);
+            // Step 5: Generate thumbnail
+            String thumbnailPath = thumbnailService.generateThumbnail(photoFile);
             photo.setThumbnailPath(thumbnailPath);
 
             // Step 6: Save Photo record (must save before creating associations)
@@ -396,15 +399,6 @@ public class PhotoProcessingService {
             logger.debug("Could not extract image dimensions from {}: {}", photoFile.getName(), e.getMessage());
         }
 
-        return null;
-    }
-
-    /**
-     * Generate thumbnail (placeholder)
-     */
-    private String generateThumbnail(File photoFile) {
-        // Placeholder for thumbnail generation
-        // Will be implemented in future step (Step 20)
         return null;
     }
 

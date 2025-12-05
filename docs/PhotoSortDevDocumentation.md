@@ -2351,3 +2351,151 @@ PhotoProcessingService.processPhoto() calls processCustomScripts() which:
 5. Failures logged but processing continues (graceful degradation)
 
 This allows custom processing logic per file type without modifying core code.
+
+---
+
+## Step 20: Thumbnail Generation
+
+### Functionality Created
+
+**ThumbnailService** - Service for generating 200x200px thumbnails for photo files with aspect ratio maintained (Step 20 of PhotoSort specification).
+
+### Implementation Notes
+
+**Architecture**:
+- **@Service annotation**: Spring-managed service with dependency injection
+- **Thumbnailator library**: net.coobird:thumbnailator:0.4.20 for image resizing
+- **ConfigService integration**: Uses git.repo.path to determine thumbnail directory
+- **Graceful failure**: Returns null on errors, logs warnings/errors
+
+**Design Patterns**:
+- **Service Layer Pattern**: Business logic separated from controllers
+- **Dependency Injection**: ConfigService autowired for configuration
+- **Fail-Safe Pattern**: Null returns instead of exceptions for invalid inputs
+- **Resource Management**: Automatic directory creation if doesn't exist
+
+**Key Components**:
+
+1. **Thumbnail Generation** (ThumbnailService.java:39-99):
+   - generateThumbnail(File photoFile) - Main entry point
+   - Returns absolute path to generated thumbnail, or null on failure
+   - Validates file exists and is readable
+   - Gets thumbnail directory from ConfigService (git.repo.path/thumbnails)
+   - Creates thumbnails directory if needed (Files.createDirectories)
+   - Extracts filename and extension from original file
+   - Generates thumbnail filename: {original_name}_thumb.{ext}
+   - Uses Thumbnailator to resize to max 200x200px
+   - Maintains aspect ratio automatically
+   - Sets JPEG quality to 0.85 for file size control
+
+2. **Thumbnailator Usage** (ThumbnailService.java:82-86):
+   ```java
+   Thumbnails.of(photoFile)
+       .size(MAX_THUMBNAIL_WIDTH, MAX_THUMBNAIL_HEIGHT)  // 200x200 max
+       .outputQuality(JPEG_QUALITY)                      // 0.85 quality
+       .toFile(thumbnailFile);
+   ```
+   - Automatically maintains aspect ratio (image fits within 200x200 box)
+   - Preserves original format (JPG → JPG, PNG → PNG)
+   - Quality setting only affects JPEG output
+
+3. **Directory Management** (ThumbnailService.java:48-62):
+   - Reads git.repo.path from ConfigService
+   - Defaults to temp directory if not configured
+   - Creates {git.repo.path}/thumbnails directory
+   - Uses Files.createDirectories() for recursive creation
+   - Logs directory creation and failures
+
+4. **Error Handling** (ThumbnailService.java:41-45, 90-96):
+   - Null/non-existent file: Logs warning, returns null
+   - Directory creation failure: Logs error, returns null
+   - Image read failure (corrupt/unsupported): Logs warning, returns null
+   - Unexpected exceptions: Logs error with stack trace, returns null
+   - Never throws exceptions to calling code
+
+5. **Filename Generation** (ThumbnailService.java:64-78):
+   - Original: `photo.jpg` → Thumbnail: `photo_thumb.jpg`
+   - Original: `image.png` → Thumbnail: `image_thumb.png`
+   - Original: `noext` → Thumbnail: `noext_thumb`
+   - Uses lastIndexOf('.') to find extension
+   - Handles files without extensions
+
+**Integration with PhotoProcessingService** (PhotoProcessingService.java:75-76, 125-127):
+- @Autowired ThumbnailService injected
+- Called at Step 5 of photo processing pipeline (BEFORE photo save)
+- thumbnailService.generateThumbnail(photoFile) replaces placeholder
+- Thumbnail path saved to photos.thumbnail_path column
+- Failures don't stop photo processing (path will be null)
+
+**Thumbnailator Library**:
+- **Version**: 0.4.20 (net.coobird:thumbnailator)
+- **Purpose**: Simplifies image resizing with quality control
+- **Key Features**:
+  - Automatic aspect ratio maintenance (proportional scaling)
+  - Quality control for JPEG compression (0.0-1.0 scale)
+  - Format preservation (auto-detects from file extension)
+  - Built on Java ImageIO (compatible with standard image formats)
+  - Thread-safe operation
+
+### Testing Summary
+
+All tests passing:
+- **Backend**: 166/166 tests passing (10 new ThumbnailService tests + 156 existing)
+- **Complete Integration**: Thumbnail generation working in photo processing pipeline
+- **Total**: 166 backend tests ✅
+
+**Test Cases Verified** (ThumbnailServiceTest.java):
+1. Thumbnail generated for JPG image - verifies file exists
+2. Thumbnail generated for PNG image - verifies format preserved
+3. Thumbnail size max 200x200px - reads image, checks dimensions
+4. Aspect ratio maintained - tests wide (4:1) and tall (1:4) images
+5. Thumbnail saved to correct path - verifies "thumbnails" directory and "_thumb" suffix
+6. Thumbnail path returned correctly - verifies non-null, non-empty, has extension
+7. Corrupt image file handled gracefully - returns null for non-image data
+8. Unsupported format handled gracefully - returns null for .xyz files
+9. Thumbnail quality acceptable - verifies valid readable image with positive dimensions
+10. File size reasonable < 50KB - checks file size within expected range
+
+### Limitations
+
+- **Naming Convention**: Uses original filename + "_thumb" instead of photo_id (photo_id not available when thumbnail created)
+- **No Overwrite Protection**: Regenerating thumbnail for same file overwrites previous thumbnail
+- **Directory Configuration**: Falls back to temp directory if git.repo.path not configured (thumbnails may be lost)
+- **Format Limitations**: Only supports formats that Java ImageIO/Thumbnailator support (JPG, PNG, GIF, BMP, some TIFF)
+- **No Caching**: Regenerates thumbnail every time, even if file unchanged (could check modification time)
+- **Synchronous Execution**: Blocks photo processing while generating thumbnail (could be async)
+- **No Size Validation**: Doesn't verify source image dimensions before processing (could fail on extremely large images)
+- **Fixed Quality**: JPEG quality hard-coded to 0.85 (not configurable per image or file size)
+- **No Progress Tracking**: No callback or status updates during generation
+- **Disk Space**: No checks for available disk space before generating
+- **Temp Directory Fallback**: Using temp directory can lead to thumbnails in non-persistent storage
+
+### Expectations
+
+- Java ImageIO supports the image format
+- Thumbnailator library (0.4.20) in classpath
+- File system write access to thumbnail directory
+- ConfigService provides git.repo.path configuration
+- Source image file is readable and valid format
+- Sufficient disk space for thumbnail file
+- Photos.thumbnail_path accepts null (for failed generations)
+- Thumbnails directory created automatically if missing
+- Service handles concurrent requests safely (Thumbnailator is thread-safe)
+- Thumbnail generation failures don't stop photo processing
+- Generated thumbnails maintain aspect ratio (fit within 200x200 box)
+- File size typically < 50KB for 200x200 JPEG at 0.85 quality
+- Thumbnails saved as same format as original (JPG → JPG, PNG → PNG)
+
+### Photo Processing Pipeline Integration
+
+PhotoProcessingService.processPhoto() calls thumbnailService.generateThumbnail() which:
+1. Validates photo file exists
+2. Determines thumbnail directory (git.repo.path/thumbnails)
+3. Creates directory if doesn't exist
+4. Generates thumbnail filename (original_name_thumb.ext)
+5. Uses Thumbnailator to resize to max 200x200px (aspect ratio preserved)
+6. Saves thumbnail with 0.85 JPEG quality
+7. Returns absolute path (or null on failure)
+8. Path saved to photos.thumbnail_path column
+
+This completes the thumbnail generation placeholder from Step 18 and enables photo table display with thumbnail previews.
