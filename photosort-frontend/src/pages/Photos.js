@@ -7,7 +7,7 @@
  * Uses generic useTableData hook and TablePage component
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import TablePage from '../components/TablePage';
 import SearchControls from '../components/SearchControls';
@@ -21,12 +21,12 @@ const Photos = () => {
 
   // Use the generic useTableData hook with photo service
   // If userId is provided, filter photos by that user (admin feature)
-  const fetchFunction = (params) => {
+  const fetchFunction = useCallback((params) => {
     if (userId) {
       return photoService.getPhotos({ ...params, userId: parseInt(userId) });
     }
     return photoService.getPhotos(params);
-  };
+  }, [userId]); // Dependency on userId since it's used inside the function
 
   const {
     data: photos,

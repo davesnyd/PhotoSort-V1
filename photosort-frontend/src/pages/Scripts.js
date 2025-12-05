@@ -6,7 +6,7 @@
  * Note: Currently implements client-side pagination since backend returns all scripts
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import TablePage from '../components/TablePage';
 import SearchControls from '../components/SearchControls';
 import ScriptTable from '../components/ScriptTable';
@@ -20,7 +20,7 @@ const Scripts = () => {
   const [selectedScript, setSelectedScript] = useState(null);
 
   // Wrapper function to adapt script service response to PagedResponse format
-  const fetchScriptsWithPagination = async (params) => {
+  const fetchScriptsWithPagination = useCallback(async (params) => {
     try {
       const response = await scriptService.getAllScripts(params);
 
@@ -71,7 +71,7 @@ const Scripts = () => {
     } catch (error) {
       throw error;
     }
-  };
+  }, []); // Empty dependency array - function doesn't depend on any props or state
 
   // Use the generic useTableData hook with wrapper function
   const {

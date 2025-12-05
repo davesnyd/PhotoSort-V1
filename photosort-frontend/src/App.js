@@ -99,10 +99,7 @@ function App() {
                 path="/photos"
                 element={
                   <ProtectedRoute adminOnly={true}>
-                    <div style={{ padding: '40px', backgroundColor: '#FFFDD0', minHeight: '100vh' }}>
-                      <h2 style={{ color: '#800020' }}>Photo Management</h2>
-                      <p style={{ color: '#000080' }}>This feature will be implemented in Step 7.</p>
-                    </div>
+                    <Photos />
                   </ProtectedRoute>
                 }
               />
