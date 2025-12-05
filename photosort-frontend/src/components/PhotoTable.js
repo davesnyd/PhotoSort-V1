@@ -6,7 +6,7 @@
  * Uses generic DataTable component
  */
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DataTable from './DataTable';
 import photoService from '../services/photoService';
@@ -54,7 +54,7 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
   /**
    * Define columns for the data table
    */
-  const columns = [
+  const columns = useMemo(() => [
     {
       field: 'thumbnail',
       header: 'Thumbnail',
@@ -115,12 +115,12 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
         </span>
       )
     }
-  ];
+  ], []); // Empty dependency array - columns config is static
 
   /**
    * Render action buttons for each row
    */
-  const renderActions = (row) => {
+  const renderActions = useCallback((row) => {
     return (
       <>
         <button
@@ -132,7 +132,7 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
         </button>
       </>
     );
-  };
+  }, [navigate]); // Depends on navigate function
 
   return (
     <DataTable
