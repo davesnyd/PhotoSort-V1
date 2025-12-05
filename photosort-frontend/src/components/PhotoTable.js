@@ -67,6 +67,8 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
               src={photoService.getPhotoThumbnailUrl(row.photoId)}
               alt={row.fileName}
               className="photo-thumbnail"
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate(`/photo/${row.photoId}`)}
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/placeholder-image.png';
@@ -80,7 +82,15 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
     {
       field: 'fileName',
       header: 'File Name',
-      sortable: true
+      sortable: true,
+      render: (row, value) => (
+        <span
+          style={{ cursor: 'pointer', color: '#0066cc' }}
+          onClick={() => navigate(`/photo/${row.photoId}`)}
+        >
+          {value}
+        </span>
+      )
     },
     {
       field: 'fileSize',
@@ -116,24 +126,7 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
         </span>
       )
     }
-  ], []); // Empty dependency array - columns config is static
-
-  /**
-   * Render action buttons for each row
-   */
-  const renderActions = useCallback((row) => {
-    return (
-      <>
-        <button
-          className="action-btn view-btn"
-          onClick={() => navigate(`/photo/${row.photoId}`)}
-          title="View full size image with metadata"
-        >
-          View
-        </button>
-      </>
-    );
-  }, [navigate]); // Depends on navigate function
+  ], [navigate]); // Depends on navigate for onClick handlers
 
   return (
     <DataTable
@@ -141,7 +134,6 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
       columns={columns}
       onSort={onSortChange}
       currentSort={currentSort}
-      renderActions={renderActions}
       keyField="photoId"
       noDataMessage="No photos found"
     />
