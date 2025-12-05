@@ -2170,3 +2170,184 @@ All tests passing:
 - Unique constraint on tags.tag_value enforced by database
 - Unique constraint on metadata_fields.field_name enforced by database
 - Optional components (EXIF, metadata files, STAG) degrade gracefully when unavailable
+
+---
+
+## Step 19: Custom Script Execution Engine
+
+### Functionality Created
+
+**ScriptExecutionService** - Service for executing custom scripts based on file extensions, with support for daily and periodic scheduling (Step 19 of PhotoSort specification).
+
+### Implementation Notes
+
+**Architecture**:
+- **@Service annotation**: Spring-managed service with dependency injection
+- **@PostConstruct init()**: Loads scripts from database on application startup
+- **@Scheduled methods**: Two scheduled methods for daily and periodic script execution
+- **ProcessBuilder**: Java process execution with timeout and output capture
+- **In-memory mapping**: ConcurrentHashMap for thread-safe file extension → script mapping
+- **Execution tracking**: LocalDateTime tracking for periodic script last-execution time
+
+**Design Patterns**:
+- **Service Layer Pattern**: Business logic separated from controllers
+- **Scheduled Task Pattern**: @Scheduled annotation for time-based execution
+- **Template Method Pattern**: executeScript() and executeScheduledScript() share common logic
+- **Strategy Pattern**: Different execution strategies (file-based, scheduled daily, scheduled periodic)
+- **Resource Management**: Temp files with automatic cleanup in finally blocks
+
+**Key Components**:
+
+1. **Script Loading** (ScriptExecutionService.java:61-106):
+   - @PostConstruct init() method loads scripts on application startup
+   - loadScripts() queries database for all Script records
+   - Extension-based scripts added to extensionToScriptMap (ConcurrentHashMap)
+   - Daily and periodic scripts counted and logged
+
+2. **File Extension Mapping** (ScriptExecutionService.java:53-120):
+   - ConcurrentHashMap<String, Script> for thread-safe access
+   - Key: file extension (e.g., ".jpg", ".png")
+   - Value: Script entity
+   - getScriptForExtension() provides lookup by extension
+
+3. **Script Execution** (ScriptExecutionService.java:130-238):
+   - executeScript(Script, File, Photo) - Execute script for a specific file
+   - Creates temp script file from scriptContents or uses scriptFileName
+   - Uses ProcessBuilder with "/bin/bash" to execute script
+   - **CRITICAL**: Calls waitFor() with timeout BEFORE reading output (prevents blocking)
+   - Sets working directory to file's parent directory
+   - 60-second timeout prevents hanging scripts
+   - Captures stdout/stderr (redirectErrorStream)
+   - Returns boolean success status
+   - Logs execution to script_execution_log table
+
+4. **Daily Scheduled Scripts** (ScriptExecutionService.java:243-262):
+   - @Scheduled(fixedDelay = 60000) - Runs every minute
+   - Queries scripts with runTime != null
+   - Checks if current time matches configured runTime (within 1 minute)
+   - Executes matching scripts via executeScheduledScript()
+
+5. **Periodic Scheduled Scripts** (ScriptExecutionService.java:267-293):
+   - @Scheduled(fixedDelay = 60000) - Runs every minute
+   - Queries scripts with periodicityMinutes != null
+   - Tracks last execution time in lastExecutionMap (ConcurrentHashMap)
+   - Executes if never run or if periodicityMinutes has elapsed
+   - Updates lastExecutionMap after execution
+
+6. **Execution Logging** (ScriptExecutionService.java:392-404):
+   - logExecution(Script, Photo, success, errorMessage)
+   - Creates ScriptExecutionLog record for every execution
+   - Records SUCCESS or FAILURE status
+   - Captures error messages for failed executions
+   - Gracefully handles logging failures (warns but continues)
+
+**Integration with PhotoProcessingService** (PhotoProcessingService.java:314-341):
+- processCustomScripts() called as part of photo processing pipeline
+- Extracts file extension from photo file name
+- Looks up script from ScriptExecutionService.getScriptForExtension()
+- Executes script if found, logs if not found
+- Failures logged but don't stop photo processing (graceful degradation)
+
+**Timeout Implementation (CRITICAL BUG FIX)**:
+
+The original implementation had a critical bug where reading the output stream BEFORE calling waitFor() caused the thread to block indefinitely. The fix:
+
+```java
+// WRONG (blocks indefinitely):
+Process process = processBuilder.start();
+// Reading output blocks until process completes
+BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+while ((line = reader.readLine()) != null) { ... }
+boolean completed = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS); // Never reached
+
+// CORRECT (timeout works):
+Process process = processBuilder.start();
+// Wait for completion FIRST (with timeout)
+boolean completed = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+if (!completed) {
+    process.destroyForcibly();
+    return false;
+}
+// THEN read output after process has completed
+BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+while ((line = reader.readLine()) != null) { ... }
+```
+
+**Repository Methods Used**:
+- ScriptRepository.findAll() - Load all scripts
+- ScriptRepository.findByRunTimeIsNotNull() - Get daily scheduled scripts
+- ScriptRepository.findByPeriodicityMinutesIsNotNull() - Get periodic scripts
+- ScriptExecutionLogRepository.save() - Log script executions
+- PhotoRepository (via PhotoProcessingService) - Access photo records
+
+**Database Tables**:
+- **scripts**: Source of script configuration
+- **script_execution_log**: Execution history and status
+- **photos**: Context for file-based script execution
+
+### Testing Summary
+
+All tests passing:
+- **Backend**: 156/156 tests passing (12 new ScriptExecutionService tests + 144 existing)
+- **Script Execution**: All timeout, scheduling, and logging tests passing
+- **Total**: 156 backend tests ✅
+
+**Test Cases Verified** (ScriptExecutionServiceTest.java):
+1. Service creation with scripts loaded from database on startup
+2. Correct script selected based on file extension
+3. Script executes successfully with valid script contents
+4. Script output captured (verified internally)
+5. Daily scheduled scripts structure (requires running application)
+6. Periodic scripts structure (requires running application)
+7. Execution logged to script_execution_log table
+8. Failures logged with error message
+9. reloadScripts() refreshes in-memory map from database
+10. Multiple scripts can run concurrently without interference
+11. **Script timeout prevents hanging** (sleep 1000s times out in ~60s) ✅
+12. Scripts execute with correct working directory (file's parent)
+
+### Limitations
+
+- **Shell Dependency**: Requires /bin/bash (Linux/Unix only, not Windows compatible)
+- **Script Language**: Only bash scripts supported (could extend to Python, Ruby, etc.)
+- **Output Capture**: Reads output AFTER execution completes (no streaming/real-time output)
+- **Timeout Value**: Hard-coded to 60 seconds (not configurable per script)
+- **Scheduling Granularity**: Checks every 60 seconds (1-minute resolution, not cron-like precision)
+- **Daily Script Window**: Executes if within 1 minute of runTime (may miss if system busy)
+- **Periodic Script Drift**: Uses elapsed time, not absolute schedule (can drift over time)
+- **No Script Queuing**: Concurrent executions allowed (no queue or rate limiting)
+- **No Script Chaining**: Scripts execute independently (no dependencies or ordering)
+- **Error Recovery**: Failed scripts logged but not retried
+- **Process Tree Cleanup**: destroyForcibly() may not kill all child processes on some systems
+- **Temp File Security**: Temp script files readable by all users (no permission restrictions)
+
+### Expectations
+
+- PostgreSQL database with scripts and script_execution_log tables
+- /bin/bash available on system (Linux/Unix environment)
+- File system write access for temp script files (/tmp directory)
+- Scripts must be valid bash syntax
+- Scripts exit with code 0 for success, non-zero for failure
+- Scripts must complete within 60 seconds or will be killed
+- Daily scripts run approximately once per day (within 1-minute window of runTime)
+- Periodic scripts run at configured intervals (approximately, not exactly)
+- Scripts run with working directory set to file's parent (for file-based execution)
+- Scripts receive file path as first argument (for file-based execution)
+- Scheduled scripts run with no arguments (must be self-contained)
+- Application must remain running for scheduled scripts to execute
+- ConcurrentHashMap provides thread safety for multi-threaded access
+- Script execution failures don't stop photo processing pipeline
+- All script executions logged (success and failure)
+- Execution logs retained indefinitely (no automatic cleanup)
+- Database must support @Transactional for execution logging
+
+### Photo Processing Pipeline Integration
+
+PhotoProcessingService.processPhoto() calls processCustomScripts() which:
+1. Extracts file extension from photo file name
+2. Looks up script via ScriptExecutionService.getScriptForExtension()
+3. If script found, executes it with executeScript(script, photoFile, photo)
+4. Script execution logged to script_execution_log
+5. Failures logged but processing continues (graceful degradation)
+
+This allows custom processing logic per file type without modifying core code.

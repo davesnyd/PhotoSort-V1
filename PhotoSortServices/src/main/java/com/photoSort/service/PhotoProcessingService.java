@@ -9,6 +9,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.jpeg.JpegDirectory;
 import com.photoSort.model.*;
 import com.photoSort.repository.*;
+import com.photoSort.model.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,9 @@ public class PhotoProcessingService {
 
     @Autowired
     private StagService stagService;
+
+    @Autowired
+    private ScriptExecutionService scriptExecutionService;
 
     @Autowired
     private PhotoRepository photoRepository;
@@ -305,12 +309,35 @@ public class PhotoProcessingService {
     }
 
     /**
-     * Execute custom scripts based on file extension (placeholder for Step 19)
+     * Execute custom scripts based on file extension (Step 19)
      */
     private void processCustomScripts(File photoFile, Photo photo) {
-        // Placeholder for Step 19: Custom Script Execution Engine
-        // Will be implemented when Step 19 is developed
-        logger.debug("Custom script execution placeholder (Step 19 not yet implemented)");
+        try {
+            // Get file extension
+            String fileName = photoFile.getName();
+            int dotIndex = fileName.lastIndexOf('.');
+            if (dotIndex == -1) {
+                logger.debug("File has no extension, skipping custom script execution");
+                return;
+            }
+
+            String extension = fileName.substring(dotIndex); // Includes the dot
+
+            // Get script for extension
+            Script script = scriptExecutionService.getScriptForExtension(extension);
+
+            if (script != null) {
+                logger.debug("Executing custom script '{}' for file: {}",
+                    script.getScriptName(), photoFile.getName());
+                scriptExecutionService.executeScript(script, photoFile, photo);
+            } else {
+                logger.debug("No custom script configured for extension: {}", extension);
+            }
+
+        } catch (Exception e) {
+            logger.warn("Failed to execute custom script for {}: {}", photoFile.getName(), e.getMessage());
+            // Continue processing - custom scripts are optional
+        }
     }
 
     /**
