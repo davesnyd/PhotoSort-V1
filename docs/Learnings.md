@@ -91,3 +91,11 @@ This document captures insights and lessons learned during the PhotoSort develop
 
 - **Problem**: EXIF Data extraction uses deprecated BigDecimal rounding mode constant
   **Approach to Improve**: BigDecimal.ROUND_HALF_UP is deprecated in favor of RoundingMode.HALF_UP. Update ExifDataService to use `setScale(8, RoundingMode.HALF_UP)` instead of the deprecated constant for GPS coordinate precision.
+
+## Frontend Bug Fixes (Post Step 20)
+
+- **Problem**: Functions passed to custom hooks with useEffect dependencies cause infinite render loops
+  **Approach to Improve**: Always wrap functions passed to custom hooks in useCallback with proper dependency arrays. When a function is defined inside a component without useCallback, React creates a new function instance on every render. If that function is passed to a hook that includes it in a useEffect dependency array, it triggers infinite re-renders. Examples: Scripts.js fetchScriptsWithPagination and Photos.js fetchFunction both needed useCallback wrappers.
+
+- **Problem**: Placeholder routes remain in production code after features are implemented
+  **Approach to Improve**: When implementing features like Photos page, systematically search for and replace ALL placeholder routes in App.js. Use grep to find "This feature will be implemented" or similar placeholder text to ensure no routes are missed.
