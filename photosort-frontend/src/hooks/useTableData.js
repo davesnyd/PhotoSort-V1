@@ -71,7 +71,9 @@ const useTableData = (fetchFunction, initialSort = { field: 'id', direction: 'as
       }
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError(err.response?.data?.error?.message || 'Error loading data');
+      const errorMessage = err.response?.data?.error?.message || 'Error loading data';
+      setError(errorMessage);
+      setData([]); // Clear data on error to prevent stale data display
     } finally {
       setLoading(false);
     }
