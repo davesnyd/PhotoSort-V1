@@ -60,7 +60,8 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
       header: 'Thumbnail',
       sortable: false,
       render: (row) => {
-        if (row.photoId) {
+        // Only show thumbnail if thumbnailPath exists in database
+        if (row.photoId && row.thumbnailPath) {
           return (
             <img
               src={photoService.getPhotoThumbnailUrl(row.photoId)}
