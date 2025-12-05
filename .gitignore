@@ -24,3 +24,6 @@ NEXT_STEPS.md
 
 # Scripts
 *.sh
+
+# Configuration files
+application.properties
