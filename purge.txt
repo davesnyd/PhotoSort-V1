@@ -1,0 +1,4 @@
+1016423846250-5sj3iphp6moujvqlettvbu8achgg1uof.apps.googleusercontent.com
+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
+DB_USERNAME:postgres
+DB_PASSWORD:postgres

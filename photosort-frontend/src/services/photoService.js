@@ -32,27 +32,37 @@ const photoService = {
    */
   getPhotos: async (params = {}) => {
     try {
+      // Destructure without defaults first
       const {
-        page = 0,
-        size = 10,
-        sort = 'fileName',
-        direction = 'asc',
-        search = null,
-        userId = null,
-        filterField1 = null,
-        filterValue1 = null,
-        filterType1 = null,
-        filterField2 = null,
-        filterValue2 = null,
-        filterType2 = null
+        page,
+        pageSize,
+        size,
+        sortBy,
+        sort,
+        sortDir,
+        direction,
+        search,
+        userId,
+        filterField1,
+        filterValue1,
+        filterType1,
+        filterField2,
+        filterValue2,
+        filterType2
       } = params;
+
+      // Apply defaults and parameter mapping (support both naming conventions)
+      const finalPage = page ?? 0;
+      const finalSize = size ?? pageSize ?? 10;
+      const finalSort = sort ?? sortBy ?? 'fileName';
+      const finalDirection = direction ?? sortDir ?? 'asc';
 
       // Build query string
       const queryParams = new URLSearchParams({
-        page: page.toString(),
-        size: size.toString(),
-        sort,
-        direction
+        page: finalPage.toString(),
+        size: finalSize.toString(),
+        sort: finalSort,
+        direction: finalDirection
       });
 
       // Add optional search parameter
