@@ -7,6 +7,11 @@
 
 import api from './api';
 
+// Get the API base URL
+const getApiBaseUrl = () => {
+  return process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+};
+
 const photoService = {
   /**
    * Get paginated list of photos with permission filtering
@@ -159,7 +164,7 @@ const photoService = {
    * @returns {string} Image URL
    */
   getPhotoImageUrl: (photoId) => {
-    return `/api/photos/${photoId}/image`;
+    return `${getApiBaseUrl()}/api/photos/${photoId}/image`;
   },
 
   /**
@@ -168,7 +173,7 @@ const photoService = {
    * @returns {string} Thumbnail URL
    */
   getPhotoThumbnailUrl: (photoId) => {
-    return `/api/photos/${photoId}/thumbnail`;
+    return `${getApiBaseUrl()}/api/photos/${photoId}/thumbnail`;
   },
 
   /**
@@ -195,6 +200,20 @@ const photoService = {
   updatePhotoTags: async (photoId, tags) => {
     try {
       const response = await api.put(`/api/photos/${photoId}/tags`, tags);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Reprocess a photo (regenerate thumbnail, re-extract EXIF, metadata, tags)
+   * @param {number} photoId Photo ID
+   * @returns {Promise} Success response
+   */
+  reprocessPhoto: async (photoId) => {
+    try {
+      const response = await api.post(`/api/photos/${photoId}/reprocess`);
       return response.data;
     } catch (error) {
       throw error;

@@ -50,6 +50,9 @@ public class PhotoDetailController {
     @Autowired
     private MetadataFieldRepository metadataFieldRepository;
 
+    @Autowired
+    private com.photoSort.service.PhotoProcessingService photoProcessingService;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -347,6 +350,52 @@ public class PhotoDetailController {
             return ResponseEntity.status(500)
                     .body(ApiResponse.error("INTERNAL_ERROR",
                             "Error updating tags: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Reprocess a photo through the complete processing pipeline
+     * Regenerates thumbnails, re-extracts EXIF, metadata, and tags
+     *
+     * @param id Photo ID
+     * @return Success message
+     */
+    @PostMapping("/{id}/reprocess")
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> reprocessPhoto(@PathVariable Long id) {
+        try {
+            // Verify photo exists
+            Photo photo = photoRepository.findById(id).orElse(null);
+            if (photo == null) {
+                return ResponseEntity.status(404)
+                        .body(ApiResponse.error("PHOTO_NOT_FOUND", "Photo not found"));
+            }
+
+            // Get the file path
+            String filePath = photo.getFilePath();
+            if (filePath == null || filePath.isEmpty()) {
+                return ResponseEntity.status(400)
+                        .body(ApiResponse.error("INVALID_FILE_PATH", "Photo has no file path"));
+            }
+
+            File photoFile = new File(filePath);
+            if (!photoFile.exists()) {
+                return ResponseEntity.status(404)
+                        .body(ApiResponse.error("FILE_NOT_FOUND", "Photo file not found on disk: " + filePath));
+            }
+
+            // Get owner email for processing (use existing owner)
+            String ownerEmail = photo.getOwner() != null ? photo.getOwner().getEmail() : null;
+
+            // Reprocess the photo
+            photoProcessingService.processPhoto(photoFile, ownerEmail);
+
+            return ResponseEntity.ok(ApiResponse.success("Photo reprocessed successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("INTERNAL_ERROR",
+                            "Error reprocessing photo: " + e.getMessage()));
         }
     }
 }

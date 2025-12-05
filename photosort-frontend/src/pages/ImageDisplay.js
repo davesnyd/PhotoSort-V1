@@ -20,6 +20,7 @@ const ImageDisplay = () => {
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reprocessing, setReprocessing] = useState(false);
 
   useEffect(() => {
     loadPhotoDetails();
@@ -71,6 +72,26 @@ const ImageDisplay = () => {
 
   const handleReturnToList = () => {
     navigate('/photos');
+  };
+
+  const handleReprocess = async () => {
+    setReprocessing(true);
+    setError(null);
+
+    try {
+      const response = await photoService.reprocessPhoto(photoId);
+      if (response.success) {
+        // Reload photo details to show updated data (new thumbnail, etc.)
+        await loadPhotoDetails();
+        alert('Photo reprocessed successfully!');
+      } else {
+        setError('Failed to reprocess photo: ' + (response.error?.message || 'Unknown error'));
+      }
+    } catch (err) {
+      setError('Error reprocessing photo: ' + (err.message || 'Unknown error'));
+    } finally {
+      setReprocessing(false);
+    }
   };
 
   if (loading) {
@@ -130,6 +151,24 @@ const ImageDisplay = () => {
       <div className="image-display-footer">
         <button onClick={handleReturnToList} className="return-button">
           Return to List
+        </button>
+        <button
+          onClick={handleReprocess}
+          className="reprocess-button"
+          disabled={reprocessing}
+          style={{
+            marginLeft: '10px',
+            padding: '10px 20px',
+            backgroundColor: reprocessing ? '#ccc' : '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: reprocessing ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}
+        >
+          {reprocessing ? 'Reprocessing...' : 'Reprocess'}
         </button>
       </div>
     </div>
