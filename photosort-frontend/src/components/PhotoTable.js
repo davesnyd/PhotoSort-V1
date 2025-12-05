@@ -7,10 +7,14 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import DataTable from './DataTable';
+import photoService from '../services/photoService';
 import '../styles/PhotoTable.css';
 
 const PhotoTable = ({ photos, onSortChange, currentSort }) => {
+  const navigate = useNavigate();
+
   /**
    * Format date for display
    */
@@ -56,10 +60,10 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
       header: 'Thumbnail',
       sortable: false,
       render: (row) => {
-        if (row.thumbnailPath) {
+        if (row.photoId) {
           return (
             <img
-              src={row.thumbnailPath}
+              src={photoService.getPhotoThumbnailUrl(row.photoId)}
               alt={row.fileName}
               className="photo-thumbnail"
               onError={(e) => {
@@ -121,8 +125,8 @@ const PhotoTable = ({ photos, onSortChange, currentSort }) => {
       <>
         <button
           className="action-btn view-btn"
-          onClick={() => window.open(row.filePath, '_blank')}
-          title="View full size image"
+          onClick={() => navigate(`/photo/${row.photoId}`)}
+          title="View full size image with metadata"
         >
           View
         </button>

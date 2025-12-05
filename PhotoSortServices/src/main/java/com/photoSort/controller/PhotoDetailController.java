@@ -186,6 +186,60 @@ public class PhotoDetailController {
     }
 
     /**
+     * Serve photo thumbnail from disk
+     *
+     * @param id Photo ID
+     * @return Thumbnail image file as stream
+     */
+    @GetMapping("/{id}/thumbnail")
+    public ResponseEntity<Resource> getPhotoThumbnail(@PathVariable Long id) {
+        try {
+            // Fetch photo
+            Photo photo = photoRepository.findById(id).orElse(null);
+            if (photo == null) {
+                return ResponseEntity.status(404).build();
+            }
+
+            // Check if thumbnail exists
+            if (photo.getThumbnailPath() == null || photo.getThumbnailPath().isEmpty()) {
+                return ResponseEntity.status(404).build();
+            }
+
+            // Read thumbnail file from disk
+            File thumbnailFile = new File(photo.getThumbnailPath());
+            if (!thumbnailFile.exists()) {
+                return ResponseEntity.status(404).build();
+            }
+
+            InputStreamResource resource = new InputStreamResource(new FileInputStream(thumbnailFile));
+
+            // Determine content type from file extension
+            String contentType = "image/jpeg"; // Default
+            String fileName = thumbnailFile.getName().toLowerCase();
+            if (fileName.endsWith(".png")) {
+                contentType = "image/png";
+            } else if (fileName.endsWith(".gif")) {
+                contentType = "image/gif";
+            } else if (fileName.endsWith(".bmp")) {
+                contentType = "image/bmp";
+            } else if (fileName.endsWith(".webp")) {
+                contentType = "image/webp";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(thumbnailFile.length())
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + thumbnailFile.getName() + "\"")
+                    .body(resource);
+
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.status(404).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * Update photo custom metadata
      * Replaces all existing metadata with the provided list
      *

@@ -163,6 +163,15 @@ const photoService = {
   },
 
   /**
+   * Get photo thumbnail URL
+   * @param {number} photoId Photo ID
+   * @returns {string} Thumbnail URL
+   */
+  getPhotoThumbnailUrl: (photoId) => {
+    return `/api/photos/${photoId}/thumbnail`;
+  },
+
+  /**
    * Update photo custom metadata
    * @param {number} photoId Photo ID
    * @param {Array} metadata Array of {fieldName, metadataValue} objects
