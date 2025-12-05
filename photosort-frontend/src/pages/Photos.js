@@ -7,7 +7,7 @@
  * Uses generic useTableData hook and TablePage component
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import TablePage from '../components/TablePage';
 import SearchControls from '../components/SearchControls';
@@ -53,6 +53,9 @@ const Photos = () => {
     ? 'Viewing all photos for this user'
     : 'View and manage your photos with permission-based access';
 
+  // Memoize currentSort object to prevent unnecessary re-renders
+  const currentSort = useMemo(() => ({ field: sortBy, direction: sortDir }), [sortBy, sortDir]);
+
   return (
     <TablePage title={title} subtitle={subtitle}>
       <SearchControls
@@ -77,7 +80,7 @@ const Photos = () => {
           <PhotoTable
             photos={photos}
             onSortChange={handleSortChange}
-            currentSort={{ field: sortBy, direction: sortDir }}
+            currentSort={currentSort}
           />
 
           <PaginationControls
