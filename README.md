@@ -1,48 +1,63 @@
 # PhotoSort Application
 
-A comprehensive photo management system that automatically discovers, indexes, and manages photos from a Git repository.
+A comprehensive photo management system that automatically discovers, indexes, and manages photos from a Git repository. Built with Spring Boot (Java 17), React 18, and PostgreSQL.
 
-## Project Status
+## Quick Links
 
-### Completed Steps
+📚 **Getting Started**
+- [Installation Guide](#getting-started) - Set up PhotoSort locally
+- [Docker Deployment](DOCKER.md) - Deploy with Docker Compose
+- [AWS Deployment](DOCKER_IMAGES.md#aws-deployment) - Deploy to AWS (EC2, ECS, Copilot)
 
-✅ **Step 1: Database Schema Design and Setup**
-- Complete PostgreSQL database schema with 11 tables
-- Hibernate/JPA entity classes for all database tables
-- JPA repositories with custom query methods
-- Comprehensive JUnit test suite (20+ test cases)
-- Full documentation (user, developer, test plan, learnings)
+🔧 **Operations**
+- [Build & Deploy Guide](BUILD_AND_DEPLOY.md) - Build, configure, and deploy
+- [Troubleshooting Guide](TROUBLESHOOTING.md) - Fix common issues
+- [Maintenance Guide](MAINTENANCE.md) - Keep PhotoSort running smoothly
 
-✅ **Step 3: Database Connection Configuration**
-- HikariCP connection pool configuration
-- Advanced transaction management
-- Performance optimization (batch processing, statement caching)
-- Additional test suite (8 test cases)
-- Updated documentation with monitoring and troubleshooting guides
+🔐 **Security**
+- [Secrets Setup](SECRETS_SETUP.md) - Configure OAuth, database, Git credentials
+- [Credential Restoration](CREDENTIAL_RESTORATION_GUIDE.md) - Recover from credential exposure
 
-✅ **Step 4: OAuth 2.0 Google Authentication**
-- Google OAuth 2.0 integration
-- Custom OAuth user service with PhotoSort user model integration
-- User management service (create, update, admin promotion)
-- Security configuration (CSRF protection, session management)
-- Authentication REST API endpoints
-- Comprehensive test suite (10 test cases)
-- Complete user and developer documentation
+📖 **Documentation**
+- [User Documentation](docs/PhotoSortUserDocumentation.md) - How to use PhotoSort
+- [Developer Documentation](docs/PhotoSortDevDocumentation.md) - Architecture and implementation
+- [API Documentation](#api-documentation) - REST API reference
 
-✅ **Step 5: React Frontend Project**
-- Modern React 18 web application
-- React Router for client-side routing
-- Google OAuth authentication flow
-- Protected routes and admin-only routes
-- Authentication state management with Context API
-- Axios HTTP client with interceptors
-- Responsive UI with PhotoSort color scheme
-- Navigation component and login page
-- Complete project structure ready for feature development
+## Features
+
+✅ **Completed Features** (Steps 1-20)
+
+**User Management**
+- Google OAuth 2.0 authentication
+- Role-based access control (users and administrators)
+- User profile management
+- Admin user management table
+
+**Photo Management**
+- Photo table with search, sort, and pagination
+- Permission-based photo access control
+- Public/private photo visibility
+- Photo metadata and EXIF data extraction
+- Tag management and assignment
+- Custom column preferences per user
+
+**Advanced Features**
+- Advanced filtering (must contain/must not contain)
+- Image display with metadata editing
+- User access permissions dialog
+- Script management and execution
+- Git repository polling for photo updates
+- Automated script execution
+
+**Technical Features**
+- Comprehensive automated test coverage (backend and frontend)
+- Docker containerization
+- Production-ready deployment configurations
+- Complete documentation and maintenance guides
 
 ### Current Development
 
-See `docs/WorkLog.csv` for detailed development progress.
+See `docs/WorkLog.csv` for detailed development progress and `PhotoSpecification.md` for planned features.
 
 ## Technology Stack
 
@@ -225,13 +240,105 @@ This project follows an iterative Test-Driven Development (TDD) approach:
 
 See `Claude.md` for complete development process.
 
-## Documentation
+## API Documentation
 
-- **User Documentation**: `docs/PhotoSortUserDocumentation.md`
-- **Developer Documentation**: `docs/PhotoSortDevDocumentation.md`
-- **Test Plan**: `docs/TestPlan.md`
-- **Learnings**: `docs/Learnings.md`
-- **Work Log**: `docs/WorkLog.csv`
+PhotoSort exposes a RESTful API for all operations. The backend runs on port 8080 with the following base URL:
+```
+http://localhost:8080
+```
+
+### Authentication Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/auth/user` | Get current authenticated user |
+| POST | `/api/auth/logout` | Logout current user |
+
+### User Management Endpoints (Admin Only)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users` | Get all users (paginated, sortable) |
+| GET | `/api/users/{id}` | Get user by ID |
+| PUT | `/api/users/{id}` | Update user (display name, admin status) |
+
+### Photo Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/photos` | Get photos (permission-filtered, paginated, sortable) |
+| GET | `/api/photos/{id}` | Get photo by ID |
+| PUT | `/api/photos/{id}` | Update photo (tags, metadata, visibility) |
+| PUT | `/api/photos/{id}/visibility` | Update photo visibility (public/private) |
+
+**Query Parameters**:
+- `page`: Page number (0-indexed)
+- `size`: Page size (default: 10)
+- `sortBy`: Field to sort by (fileName, createdDate, ownerDisplayName, etc.)
+- `sortDir`: Sort direction (asc/desc)
+- `search`: Quick search term (searches fileName and filePath)
+- `filterField1`, `filterValue1`, `filterType1`: Advanced filter 1
+- `filterField2`, `filterValue2`, `filterType2`: Advanced filter 2
+
+### Photo Permission Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/photos/{id}/permissions` | Get all permissions for a photo |
+| POST | `/api/photos/{id}/permissions` | Grant permission to a user |
+| DELETE | `/api/photos/{photoId}/permissions/{userId}` | Revoke permission |
+
+### Script Endpoints (Admin Only)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/scripts` | Get all scripts (paginated, sortable) |
+| GET | `/api/scripts/{id}` | Get script by ID |
+| POST | `/api/scripts` | Create new script |
+| PUT | `/api/scripts/{id}` | Update script |
+| DELETE | `/api/scripts/{id}` | Delete script |
+| POST | `/api/scripts/{id}/execute` | Execute script |
+
+### Tag Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tags` | Get all tags |
+| GET | `/api/tags/{id}` | Get tag by ID |
+| POST | `/api/tags` | Create new tag |
+| DELETE | `/api/tags/{id}` | Delete tag |
+
+### Health Check
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/actuator/health` | Application health status |
+
+## Documentation Index
+
+### User Guides
+- **[User Documentation](docs/PhotoSortUserDocumentation.md)** - How to use PhotoSort features
+- **[Test Plan](docs/TestPlan.md)** - Manual testing procedures
+
+### Deployment Guides
+- **[Getting Started](#getting-started)** - Local development setup (below)
+- **[Docker Deployment](DOCKER.md)** - Docker Compose deployment (400+ lines)
+- **[Docker Images Reference](DOCKER_IMAGES.md)** - Technical details, AWS deployment (1000+ lines)
+- **[Build & Deploy Guide](BUILD_AND_DEPLOY.md)** - Non-Docker deployment options
+
+### Operations Guides
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions (500+ lines)
+- **[Maintenance Guide](MAINTENANCE.md)** - Regular maintenance tasks, backups, monitoring (600+ lines)
+- **[Secrets Setup](SECRETS_SETUP.md)** - OAuth, database, Git credential management
+- **[Credential Restoration](CREDENTIAL_RESTORATION_GUIDE.md)** - Recovery from credential exposure
+
+### Development Guides
+- **[Developer Documentation](docs/PhotoSortDevDocumentation.md)** - Architecture, implementation details
+- **[Testing Documentation](TESTING.md)** - Automated testing approach
+- **[Frontend Testing Plan](docs/FrontendTestingPlan.md)** - Frontend test strategy
+- **[Work Log](docs/WorkLog.csv)** - Development progress tracking
+- **[Learnings](docs/Learnings.md)** - Development insights and improvements
+- **[CLAUDE.md](CLAUDE.md)** - Instructions for Claude Code development workflow
 
 ## Testing
 
