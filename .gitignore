@@ -55,3 +55,16 @@ id_rsa.pub
 # AWS credentials
 .aws/credentials
 .aws/config
+
+# Docker-related files
+.env
+.env.docker
+docker-compose.override.yml
+
+# Docker data (if using local volumes instead of named volumes)
+data/
+volumes/
+
+# Container logs
+*.log
+logs/
