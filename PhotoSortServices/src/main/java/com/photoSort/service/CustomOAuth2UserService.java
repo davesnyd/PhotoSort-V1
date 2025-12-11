@@ -4,6 +4,8 @@
 package com.photoSort.service;
 
 import com.photoSort.model.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -21,6 +23,8 @@ import java.util.Map;
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CustomOAuth2UserService.class);
+
     private final UserService userService;
 
     @Autowired
@@ -37,6 +41,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
      */
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        logger.info("OAuth2 loadUser called - processing OAuth login");
+
         // Get user info from Google
         OAuth2User oauth2User = super.loadUser(userRequest);
 
@@ -45,8 +51,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = oauth2User.getAttribute("email");
         String name = oauth2User.getAttribute("name");
 
+        logger.info("OAuth2 user info received - googleId: {}, email: {}, name: {}", googleId, email, name);
+
         // Process OAuth login (create or update user)
         User user = userService.processOAuthLogin(googleId, email, name);
+
+        logger.info("OAuth2 user processed - userId: {}, userType: {}", user.getUserId(), user.getUserType());
 
         // Create custom OAuth2User with our user ID
         return new CustomOAuth2User(oauth2User, user);

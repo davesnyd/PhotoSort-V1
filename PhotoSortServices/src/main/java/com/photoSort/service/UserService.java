@@ -8,6 +8,8 @@ import com.photoSort.dto.SearchFilterDTO;
 import com.photoSort.dto.UserDTO;
 import com.photoSort.model.User;
 import com.photoSort.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +34,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     private final UserRepository userRepository;
 
     @Autowired
@@ -49,15 +53,20 @@ public class UserService {
      * @return The user (newly created or existing)
      */
     public User processOAuthLogin(String googleId, String email, String displayName) {
+        logger.info("processOAuthLogin called - googleId: {}, email: {}", googleId, email);
+
         Optional<User> existingUser = userRepository.findByGoogleId(googleId);
 
         if (existingUser.isPresent()) {
             // Returning user - update last login date
             User user = existingUser.get();
             user.setLastLoginDate(LocalDateTime.now());
-            return userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            logger.info("Existing user updated - userId: {}", savedUser.getUserId());
+            return savedUser;
         } else {
             // New user - create account
+            logger.info("Creating new user - email: {}", email);
             User newUser = new User();
             newUser.setGoogleId(googleId);
             newUser.setEmail(email);
@@ -65,7 +74,9 @@ public class UserService {
             newUser.setUserType(User.UserType.USER); // Default to regular user
             newUser.setFirstLoginDate(LocalDateTime.now());
             newUser.setLastLoginDate(LocalDateTime.now());
-            return userRepository.save(newUser);
+            User savedUser = userRepository.save(newUser);
+            logger.info("New user created - userId: {}, email: {}", savedUser.getUserId(), savedUser.getEmail());
+            return savedUser;
         }
     }
 
