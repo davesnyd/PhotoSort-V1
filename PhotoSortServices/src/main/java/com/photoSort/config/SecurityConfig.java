@@ -5,6 +5,7 @@ package com.photoSort.config;
 
 import com.photoSort.service.CustomOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -86,6 +87,12 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
+                )
+
+                // Session management
+                .sessionManagement(session -> session
+                        .sessionFixation().newSession()
+                        .maximumSessions(1)
                 );
 
         return http.build();
@@ -120,5 +127,16 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    /**
+     * Configure session cookie SameSite attribute for proper OAuth flow in Docker with nginx proxy.
+     * Sets SameSite=Lax to allow cookies on OAuth redirects while maintaining security.
+     *
+     * @return CookieSameSiteSupplier configured for session cookies
+     */
+    @Bean
+    public CookieSameSiteSupplier applicationCookieSameSiteSupplier() {
+        return CookieSameSiteSupplier.ofLax().whenHasName("JSESSIONID");
     }
 }

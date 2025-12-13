@@ -11,9 +11,10 @@ const authService = {
   /**
    * Initiate Google OAuth login
    * Redirects to backend OAuth endpoint
+   * Uses relative path for Docker deployment (nginx proxies to backend)
    */
   loginWithGoogle: () => {
-    window.location.href = `${process.env.REACT_APP_API_BASE_URL}/oauth2/authorization/google`;
+    window.location.href = '/oauth2/authorization/google';
   },
 
   /**
