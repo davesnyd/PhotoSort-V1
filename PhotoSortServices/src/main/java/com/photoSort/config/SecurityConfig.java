@@ -10,13 +10,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Security configuration for PhotoSort application.
@@ -27,13 +35,16 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
     @Autowired
-    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService) {
+    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService,
+                          ClientRegistrationRepository clientRegistrationRepository) {
         this.customOAuth2UserService = customOAuth2UserService;
+        this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
     /**
@@ -73,6 +84,9 @@ public class SecurityConfig {
                 // OAuth 2.0 login configuration
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestResolver(authorizationRequestResolver())
+                        )
                         .successHandler(oAuth2SuccessHandler())
                         .failureUrl("/login?error=true")
                         .userInfoEndpoint(userInfo -> userInfo
@@ -138,5 +152,35 @@ public class SecurityConfig {
     @Bean
     public CookieSameSiteSupplier applicationCookieSameSiteSupplier() {
         return CookieSameSiteSupplier.ofLax().whenHasName("JSESSIONID");
+    }
+
+    /**
+     * Custom OAuth2 Authorization Request Resolver that forces Google to show account selection screen.
+     * Adds 'prompt=select_account' parameter to the authorization request.
+     *
+     * @return OAuth2AuthorizationRequestResolver with custom parameters
+     */
+    private OAuth2AuthorizationRequestResolver authorizationRequestResolver() {
+        DefaultOAuth2AuthorizationRequestResolver authorizationRequestResolver =
+                new DefaultOAuth2AuthorizationRequestResolver(
+                        this.clientRegistrationRepository, "/oauth2/authorization");
+
+        authorizationRequestResolver.setAuthorizationRequestCustomizer(
+                authorizationRequestCustomizer());
+
+        return authorizationRequestResolver;
+    }
+
+    /**
+     * Customizer that adds 'prompt=select_account' to force Google account selection.
+     *
+     * @return Consumer that customizes OAuth2 authorization requests
+     */
+    private Consumer<OAuth2AuthorizationRequest.Builder> authorizationRequestCustomizer() {
+        return customizer -> {
+            Map<String, Object> additionalParameters = new HashMap<>();
+            additionalParameters.put("prompt", "select_account");
+            customizer.additionalParameters(additionalParameters);
+        };
     }
 }
