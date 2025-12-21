@@ -1,0 +1,125 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Maven: Clean Install",
+            "type": "shell",
+            "command": "mvn clean install",
+            "options": {
+                "cwd": "${workspaceFolder}/PhotoSortServices"
+            },
+            "group": "build",
+            "problemMatcher": "$mvn"
+        },
+        {
+            "label": "Maven: Run Tests",
+            "type": "shell",
+            "command": "mvn test",
+            "options": {
+                "cwd": "${workspaceFolder}/PhotoSortServices"
+            },
+            "group": "test",
+            "problemMatcher": "$mvn"
+        },
+        {
+            "label": "Maven: Run Spring Boot",
+            "type": "shell",
+            "command": "mvn spring-boot:run",
+            "options": {
+                "cwd": "${workspaceFolder}/PhotoSortServices"
+            },
+            "group": "none",
+            "problemMatcher": "$mvn",
+            "isBackground": true
+        },
+        {
+            "label": "npm: Install Dependencies",
+            "type": "shell",
+            "command": "npm install",
+            "options": {
+                "cwd": "${workspaceFolder}/photosort-frontend"
+            },
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "npm: Start React Dev Server",
+            "type": "shell",
+            "command": "npm start",
+            "options": {
+                "cwd": "${workspaceFolder}/photosort-frontend"
+            },
+            "group": "none",
+            "problemMatcher": [],
+            "isBackground": true
+        },
+        {
+            "label": "npm: Run Tests",
+            "type": "shell",
+            "command": "npm test -- --watchAll=false",
+            "options": {
+                "cwd": "${workspaceFolder}/photosort-frontend"
+            },
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "npm: Run Tests with Coverage",
+            "type": "shell",
+            "command": "npm test -- --coverage --watchAll=false",
+            "options": {
+                "cwd": "${workspaceFolder}/photosort-frontend"
+            },
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "npm: Build Production",
+            "type": "shell",
+            "command": "npm run build",
+            "options": {
+                "cwd": "${workspaceFolder}/photosort-frontend"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Compose Up",
+            "type": "shell",
+            "command": "docker-compose up -d",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Compose Down",
+            "type": "shell",
+            "command": "docker-compose down",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run All Tests (Backend + Frontend)",
+            "dependsOn": ["Maven: Run Tests", "npm: Run Tests"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build All",
+            "dependsOn": ["Maven: Clean Install", "npm: Build Production"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

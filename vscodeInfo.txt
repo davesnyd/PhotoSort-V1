@@ -1,0 +1,34 @@
+● I've created the VS Code configuration files in .vscode/:
+
+  Files created:
+
+  1. settings.json - Workspace settings for:
+    - Java 17 / Spring Boot development
+    - JavaScript/React with ESLint
+    - Auto-formatting on save
+    - Search/file exclusions for node_modules and target
+  2. launch.json - Debug configurations:
+    - Debug Spring Boot Backend
+    - Debug React Frontend (Chrome/Firefox)
+    - Debug Jest Tests
+    - Debug JUnit Tests
+    - "Full Stack Debug" compound to run both together
+  3. tasks.json - Build/run tasks accessible via Ctrl+Shift+B:
+    - Maven: Clean Install, Run Tests, Run Spring Boot
+    - npm: Install, Start Dev Server, Run Tests, Build Production
+    - Docker: Compose Up/Down
+    - Combined tasks: "Build All" and "Run All Tests"
+  4. extensions.json - Recommended extensions:
+    - Java: Red Hat Java, Maven, Spring Boot tools
+    - React: ESLint, Prettier, React snippets
+    - Testing: Jest runner
+    - Git: GitLens, Git Graph
+    - Docker support
+    - PostgreSQL client
+
+  To use:
+  - Open the folder in VS Code and it will prompt to install recommended extensions
+  - Use F5 to start debugging
+  - Use Ctrl+Shift+B to run build tasks
+  - Use Ctrl+Shift+P → "Tasks: Run Task" to see all available tasks
+

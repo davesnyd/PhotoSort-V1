@@ -1,0 +1,80 @@
+{
+    // Java Settings
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.project.sourcePaths": ["PhotoSortServices/src/main/java"],
+    "java.project.outputPath": "PhotoSortServices/target",
+    "java.project.referencedLibraries": [
+        "PhotoSortServices/target/**/*.jar"
+    ],
+
+    // Maven Settings
+    "maven.executable.path": "",
+    "maven.terminal.useJavaHome": true,
+    "java.configuration.maven.userSettings": "",
+
+    // Editor Settings
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+
+    // JavaScript/React Settings
+    "javascript.preferences.quoteStyle": "single",
+    "typescript.preferences.quoteStyle": "single",
+    "emmet.includeLanguages": {
+        "javascript": "javascriptreact"
+    },
+
+    // File Associations
+    "files.associations": {
+        "*.java": "java",
+        "*.js": "javascript",
+        "*.jsx": "javascriptreact",
+        "*.css": "css"
+    },
+
+    // Search Exclusions
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/target": true,
+        "**/.git": true,
+        "**/build": true
+    },
+
+    // File Exclusions from Explorer
+    "files.exclude": {
+        "**/.git": true,
+        "**/node_modules": false,
+        "**/target": false
+    },
+
+    // Files to watch
+    "files.watcherExclude": {
+        "**/target/**": true,
+        "**/node_modules/**": true
+    },
+
+    // Terminal Settings
+    "terminal.integrated.cwd": "${workspaceFolder}",
+
+    // ESLint Settings
+    "eslint.workingDirectories": ["photosort-frontend"],
+    "eslint.validate": ["javascript", "javascriptreact"],
+
+    // Prettier (if installed)
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[java]": {
+        "editor.defaultFormatter": "redhat.java"
+    }
+}

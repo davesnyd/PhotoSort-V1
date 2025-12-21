@@ -1,0 +1,63 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug Spring Boot Backend",
+            "request": "launch",
+            "mainClass": "com.photoSort.PhotoSortApplication",
+            "projectName": "PhotoSortServices",
+            "cwd": "${workspaceFolder}/PhotoSortServices",
+            "envFile": "${workspaceFolder}/.env",
+            "args": "",
+            "vmArgs": "-Dspring.profiles.active=dev"
+        },
+        {
+            "type": "java",
+            "name": "Debug Current Java File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "chrome",
+            "name": "Debug React Frontend (Chrome)",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/photosort-frontend/src",
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/*"
+            }
+        },
+        {
+            "type": "firefox",
+            "name": "Debug React Frontend (Firefox)",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/photosort-frontend/src"
+        },
+        {
+            "type": "node",
+            "name": "Debug Jest Tests",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["test", "--", "--runInBand", "--no-cache", "--watchAll=false"],
+            "cwd": "${workspaceFolder}/photosort-frontend",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "type": "java",
+            "name": "Debug JUnit Test",
+            "request": "launch",
+            "mainClass": "",
+            "projectName": "PhotoSortServices"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full Stack Debug",
+            "configurations": ["Debug Spring Boot Backend", "Debug React Frontend (Chrome)"],
+            "stopAll": true
+        }
+    ]
+}
