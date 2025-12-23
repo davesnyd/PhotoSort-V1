@@ -28,7 +28,18 @@ export const updateConfiguration = async (configData) => {
   return response.data;
 };
 
+/**
+ * Trigger a full rescan of the photo repository
+ * Clears poll state and processes all photos in the configured directory
+ * @returns {Promise} Rescan result with photosProcessed count
+ */
+export const triggerRescan = async () => {
+  const response = await api.post('/api/config/rescan');
+  return response.data;
+};
+
 export default {
   getConfiguration,
-  updateConfiguration
+  updateConfiguration,
+  triggerRescan
 };

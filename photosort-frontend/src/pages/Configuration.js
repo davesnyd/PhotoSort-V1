@@ -14,6 +14,8 @@ const Configuration = () => {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [rescanning, setRescanning] = useState(false);
+  const [rescanResult, setRescanResult] = useState(null);
 
   // Load configuration on component mount
   useEffect(() => {
@@ -52,6 +54,32 @@ const Configuration = () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSave();
+    }
+  };
+
+  const handleRescan = async () => {
+    try {
+      setRescanning(true);
+      setRescanResult(null);
+      setError(null);
+
+      const response = await configService.triggerRescan();
+
+      if (response.success) {
+        setRescanResult({
+          success: true,
+          message: `Rescan completed! ${response.data.photosProcessed} photo(s) processed.`
+        });
+
+        // Hide success message after 5 seconds
+        setTimeout(() => setRescanResult(null), 5000);
+      } else {
+        setError(response.error?.message || 'Rescan failed');
+      }
+    } catch (err) {
+      setError('Error during rescan: ' + err.message);
+    } finally {
+      setRescanning(false);
     }
   };
 
@@ -103,6 +131,7 @@ const Configuration = () => {
 
       {error && <div style={styles.error}>Error: {error}</div>}
       {saveSuccess && <div style={styles.success}>Configuration saved successfully!</div>}
+      {rescanResult && <div style={styles.success}>{rescanResult.message}</div>}
 
       <div style={styles.form}>
         {/* Database Configuration Section */}
@@ -195,6 +224,21 @@ const Configuration = () => {
               style={styles.input}
               min="1"
             />
+          </div>
+          <div style={styles.rescanContainer}>
+            <button
+              onClick={handleRescan}
+              disabled={rescanning}
+              style={{
+                ...styles.rescanButton,
+                ...(rescanning ? styles.rescanButtonDisabled : {})
+              }}
+            >
+              {rescanning ? 'Rescanning...' : 'Rescan Photos Now'}
+            </button>
+            <p style={styles.rescanHelp}>
+              Forces a full rescan of all photos in the configured repository directory.
+            </p>
           </div>
         </div>
 
@@ -363,6 +407,31 @@ const styles = {
   saveButtonDisabled: {
     opacity: 0.6,
     cursor: 'not-allowed'
+  },
+  rescanContainer: {
+    marginTop: '20px',
+    paddingTop: '15px',
+    borderTop: '1px dashed #000080'
+  },
+  rescanButton: {
+    backgroundColor: '#000080', // Navy
+    color: '#FFFDD0', // Cream
+    padding: '10px 20px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  },
+  rescanButtonDisabled: {
+    opacity: 0.6,
+    cursor: 'not-allowed'
+  },
+  rescanHelp: {
+    color: '#666',
+    fontSize: '12px',
+    marginTop: '8px',
+    marginBottom: '0'
   }
 };
 

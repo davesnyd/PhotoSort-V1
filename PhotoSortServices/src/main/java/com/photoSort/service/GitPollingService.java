@@ -57,6 +57,34 @@ public class GitPollingService {
     private PhotoProcessingService photoProcessingService;
 
     /**
+     * Trigger a full rescan of all photos in the repository.
+     * Clears the last commit hash to force reprocessing of all images.
+     *
+     * @return Number of photos processed, or -1 if error
+     */
+    public int triggerFullRescan() {
+        logger.info("Manual full rescan triggered");
+
+        String repoPath = configService.getProperty("git.repo.path", "/path/to/repo");
+        if (repoPath.equals("/path/to/repo") || repoPath.isEmpty()) {
+            logger.warn("Git repository path not configured, cannot rescan");
+            return -1;
+        }
+
+        // Clear the last commit hash to force full rescan
+        Optional<GitPollState> pollStateOpt = gitPollStateRepository.findByRepositoryPath(repoPath);
+        if (pollStateOpt.isPresent()) {
+            GitPollState pollState = pollStateOpt.get();
+            pollState.setLastCommitHash(null);
+            gitPollStateRepository.save(pollState);
+            logger.info("Cleared last commit hash for repository: {}", repoPath);
+        }
+
+        // Run the poll which will now process all files
+        return pollRepositoryInternal();
+    }
+
+    /**
      * Poll Git repository at configured interval
      * Fixed delay ensures previous execution completes before next starts
      * Interval is configured in minutes, converted to milliseconds (* 60 * 1000)
@@ -64,7 +92,15 @@ public class GitPollingService {
     @Scheduled(fixedDelayString = "#{${git.poll.interval.minutes:5} * 60 * 1000}",
                initialDelayString = "60000") // 1 minute initial delay
     public void pollRepository() {
+        pollRepositoryInternal();
+    }
+
+    /**
+     * Internal poll implementation that returns count of processed files
+     */
+    private int pollRepositoryInternal() {
         logger.info("Starting Git repository poll");
+        int processedCount = 0;
 
         try {
             // Get Git configuration
@@ -76,13 +112,13 @@ public class GitPollingService {
             // Validate configuration
             if (repoPath.equals("/path/to/repo") || repoPath.isEmpty()) {
                 logger.warn("Git repository path not configured, skipping poll");
-                return;
+                return -1;
             }
 
             File repoDir = new File(repoPath);
             if (!repoDir.exists()) {
                 logger.error("Git repository directory does not exist: {}", repoPath);
-                return;
+                return -1;
             }
 
             // Get or create poll state
@@ -94,14 +130,14 @@ public class GitPollingService {
             // Open Git repository
             Repository repository = openRepository(repoDir);
             if (repository == null) {
-                return;
+                return -1;
             }
 
             try (Git git = new Git(repository)) {
                 // Execute git pull
                 PullResult pullResult = executePull(git, username, token);
                 if (pullResult == null) {
-                    return;
+                    return -1;
                 }
 
                 logger.info("Git pull completed successfully");
@@ -110,7 +146,7 @@ public class GitPollingService {
                 ObjectId headCommit = repository.resolve("HEAD");
                 if (headCommit == null) {
                     logger.warn("No HEAD commit found in repository");
-                    return;
+                    return -1;
                 }
 
                 String currentCommitHash = headCommit.getName();
@@ -125,9 +161,10 @@ public class GitPollingService {
 
                     logger.info("Detected {} changed image file(s)", changedImageFiles.size());
 
-                    // Process changed files (placeholder for future steps)
+                    // Process changed files
                     for (String filePath : changedImageFiles) {
                         processImageFile(new File(repoDir, filePath));
+                        processedCount++;
                     }
 
                     // Update poll state
@@ -140,7 +177,7 @@ public class GitPollingService {
                 pollState.setLastPollTime(LocalDateTime.now());
                 gitPollStateRepository.save(pollState);
 
-                logger.info("Git repository poll completed successfully");
+                logger.info("Git repository poll completed successfully, processed {} files", processedCount);
 
             } finally {
                 repository.close();
@@ -148,7 +185,10 @@ public class GitPollingService {
 
         } catch (Exception e) {
             logger.error("Unexpected error during Git repository poll: {}", e.getMessage(), e);
+            return -1;
         }
+
+        return processedCount;
     }
 
     /**

@@ -522,7 +522,100 @@ All users can now view and manage photos they have access to. The system automat
 
 ---
 
-*Additional user functionality will be documented as features are implemented.*
+## System Configuration (Administrator Only)
+
+### Functionality Created
+**System Configuration Management**
+
+Administrators can configure system settings including database connection, photo repository location, OAuth credentials, and AI tagging settings through a web-based interface.
+
+### Accessing Configuration
+
+1. Log in as an Administrator
+2. Click **"Configuration"** in the navigation bar
+3. You'll see the System Configuration page with multiple sections
+
+### Configuration Sections
+
+#### Database Configuration
+- **Database URI**: The PostgreSQL connection URL (e.g., `jdbc:postgresql://localhost:5432/PhotoSortData`)
+- **Username**: Database username
+- **Password**: Database password (shown as `********` for security; leave unchanged to keep existing password)
+
+#### Git Configuration (Photo Repository)
+This section controls where PhotoSort looks for photos to import.
+
+- **Repository Path**: Local filesystem path to a Git repository containing your photos
+  - Example: `/data/photos` or `/home/user/Pictures/PhotoRepo`
+  - Must be an existing directory with a `.git` folder (Git repository)
+  - Photos in this directory will be automatically discovered and imported
+
+- **Repository URL**: Optional Git remote URL for pulling updates
+  - Example: `https://github.com/username/photos.git`
+  - Leave blank if only using local photos
+
+- **Username**: Git username (optional, for private repositories)
+- **Access Token**: Git personal access token (optional, for private repositories)
+- **Poll Interval (minutes)**: How often to check for new photos (default: 5 minutes)
+
+#### Rescan Photos
+- **Rescan Photos Now** button: Forces an immediate full rescan of all photos
+  - Use this after changing the Repository Path
+  - Use this to re-import photos that may have been missed
+  - Shows the number of photos processed when complete
+
+#### OAuth Configuration
+- **Client ID**: Google OAuth 2.0 Client ID
+- **Client Secret**: Google OAuth 2.0 Client Secret (shown as `********`)
+- **Redirect URI**: OAuth callback URL (typically `http://localhost:8080/login/oauth2/code/google`)
+
+#### STAG Configuration (AI Tagging)
+- **Script Path**: Path to the STAG Python script for AI-based photo tagging
+- **Python Executable**: Python interpreter to use (e.g., `python3`)
+
+### Saving Configuration
+
+1. Make your changes in any field
+2. Click the **"Save Configuration"** button at the bottom
+3. A success message will appear if saved successfully
+4. Password fields will show `********` after saving (for security)
+
+### Common Tasks
+
+#### Setting Up Photo Import for the First Time
+1. Navigate to Configuration page
+2. In **Git Configuration**:
+   - Set **Repository Path** to your photo directory (must be a Git repository)
+   - Optionally set **Repository URL** if syncing from a remote
+3. Click **Save Configuration**
+4. Click **Rescan Photos Now** to import all photos immediately
+5. Check the Photos page to verify import succeeded
+
+#### Changing the Photo Directory
+1. Update **Repository Path** to the new location
+2. Click **Save Configuration**
+3. Click **Rescan Photos Now** to import photos from the new location
+
+#### Troubleshooting Photo Import
+
+**No photos appearing after rescan**:
+- Verify the Repository Path exists and is a valid Git repository
+- Check that the directory contains image files (jpg, png, gif, bmp, tiff, webp)
+- Ensure the application has read access to the directory
+
+**Rescan fails**:
+- Check the Repository Path is configured (not the default `/path/to/repo`)
+- Verify the directory exists on the filesystem
+- Check backend logs for detailed error messages
+
+### Important Notes
+
+- Only Administrators can access the Configuration page
+- Password fields are never shown in plain text
+- Changes to OAuth settings may require re-authentication
+- The Poll Interval determines automatic scanning frequency; use **Rescan Photos Now** for immediate scanning
+
+---
 
 ## Customize Photo Table Columns
 
