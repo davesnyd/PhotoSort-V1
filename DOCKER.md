@@ -34,7 +34,7 @@ All services are orchestrated using Docker Compose with automatic health checks,
 ### Required Software
 ```bash
 docker --version      # 20.10 or higher
-docker-compose --version  # 1.29 or higher
+docker compose --version  # 1.29 or higher
 ```
 
 ### Installation
@@ -46,8 +46,8 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER  # Log out and back in
 
 # Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+sudo chmod +x /usr/local/bin/docker compose
 ```
 
 **macOS**:
@@ -81,7 +81,7 @@ Required configuration:
 
 # Option 2: Manual steps
 ./scripts/build-docker.sh
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 3. Access Application
@@ -156,17 +156,17 @@ This script:
 ### Manual Build
 ```bash
 # Build all images
-docker-compose build
+docker compose build
 
 # Build specific service
-docker-compose build backend
-docker-compose build frontend
+docker compose build backend
+docker compose build frontend
 
 # Build without cache (clean build)
-docker-compose build --no-cache
+docker compose build --no-cache
 
 # Build with custom API URL
-docker-compose build --build-arg REACT_APP_API_BASE_URL=https://api.example.com frontend
+docker compose build --build-arg REACT_APP_API_BASE_URL=https://api.example.com frontend
 ```
 
 ### Image Details
@@ -210,48 +210,48 @@ docker-compose build --build-arg REACT_APP_API_BASE_URL=https://api.example.com 
 
 **Start all services**:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 **Start specific service**:
 ```bash
-docker-compose up -d backend
+docker compose up -d backend
 ```
 
 **View logs**:
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
+docker compose logs -f backend
+docker compose logs -f frontend
 
 # Last 100 lines
-docker-compose logs --tail=100 backend
+docker compose logs --tail=100 backend
 ```
 
 **Check status**:
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 **Restart services**:
 ```bash
 # Restart all
-docker-compose restart
+docker compose restart
 
 # Restart specific
-docker-compose restart backend
+docker compose restart backend
 ```
 
 **Stop and remove**:
 ```bash
 # Stop containers
-docker-compose down
+docker compose down
 
 # Stop and remove volumes (DELETES ALL DATA)
-docker-compose down -v
+docker compose down -v
 ```
 
 ---
@@ -262,35 +262,35 @@ docker-compose down -v
 
 **Backend**:
 ```bash
-docker-compose exec backend sh
+docker compose exec backend sh
 
 # Run specific command
-docker-compose exec backend ls -la /app
-docker-compose exec backend java -version
+docker compose exec backend ls -la /app
+docker compose exec backend java -version
 ```
 
 **Frontend**:
 ```bash
-docker-compose exec frontend sh
+docker compose exec frontend sh
 
 # Check nginx config
-docker-compose exec frontend nginx -t
+docker compose exec frontend nginx -t
 ```
 
 **Database**:
 ```bash
 # PostgreSQL shell
-docker-compose exec database psql -U photosort_user -d PhotoSortData
+docker compose exec database psql -U photosort_user -d PhotoSortData
 
 # Run SQL file
-docker-compose exec -T database psql -U photosort_user -d PhotoSortData < backup.sql
+docker compose exec -T database psql -U photosort_user -d PhotoSortData < backup.sql
 ```
 
 ### Health Checks
 
 All services have automatic health checks. View status:
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 Healthy services show: `(healthy)`
@@ -302,7 +302,7 @@ Healthy services show: `(healthy)`
 
 ### Resource Limits
 
-Add resource limits to `docker-compose.yml`:
+Add resource limits to `docker compose.yml`:
 ```yaml
 services:
   backend:
@@ -340,7 +340,7 @@ docker volume inspect photosort_postgres_data
 **Backup volume**:
 ```bash
 # Database backup
-docker-compose exec database pg_dump -U photosort_user PhotoSortData > backup_$(date +%Y%m%d).sql
+docker compose exec database pg_dump -U photosort_user PhotoSortData > backup_$(date +%Y%m%d).sql
 
 # Photo data backup
 docker run --rm -v photosort_photo_data:/data -v $(pwd):/backup alpine tar czf /backup/photos_backup.tar.gz -C /data .
@@ -349,7 +349,7 @@ docker run --rm -v photosort_photo_data:/data -v $(pwd):/backup alpine tar czf /
 **Restore volume**:
 ```bash
 # Database restore
-cat backup_20251205.sql | docker-compose exec -T database psql -U photosort_user PhotoSortData
+cat backup_20251205.sql | docker compose exec -T database psql -U photosort_user PhotoSortData
 
 # Photo data restore
 docker run --rm -v photosort_photo_data:/data -v $(pwd):/backup alpine tar xzf /backup/photos_backup.tar.gz -C /data
@@ -357,7 +357,7 @@ docker run --rm -v photosort_photo_data:/data -v $(pwd):/backup alpine tar xzf /
 
 **Remove volumes** (DELETES ALL DATA):
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ---
@@ -402,8 +402,8 @@ DB_PORT=5555
 
 Then restart:
 ```bash
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ---
@@ -414,9 +414,9 @@ docker-compose up -d
 
 **Check logs**:
 ```bash
-docker-compose logs backend
-docker-compose logs frontend
-docker-compose logs database
+docker compose logs backend
+docker compose logs frontend
+docker compose logs database
 ```
 
 **Common issues**:
@@ -439,9 +439,9 @@ docker-compose logs database
 3. **Database connection fails**:
    ```bash
    # Check database health
-   docker-compose exec database pg_isready
+   docker compose exec database pg_isready
 
-   # Verify credentials in .env match docker-compose.yml
+   # Verify credentials in .env match docker compose.yml
    ```
 
 ### Backend Fails to Connect to Database
@@ -451,13 +451,13 @@ docker-compose logs database
 **Solution**:
 ```bash
 # 1. Verify database is healthy
-docker-compose ps
+docker compose ps
 
 # 2. Check database connection from backend
-docker-compose exec backend wget -O- database:5432
+docker compose exec backend wget -O- database:5432
 
 # 3. Restart backend after database is ready
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### Frontend Can't Reach Backend
@@ -470,8 +470,8 @@ docker-compose restart backend
 # Should be http://localhost:8080 for local deployment
 
 # 2. Rebuild frontend with correct URL
-docker-compose build --build-arg REACT_APP_API_BASE_URL=http://localhost:8080 frontend
-docker-compose up -d frontend
+docker compose build --build-arg REACT_APP_API_BASE_URL=http://localhost:8080 frontend
+docker compose up -d frontend
 ```
 
 ### Out of Disk Space
@@ -557,7 +557,7 @@ JAVA_OPTS=-Xmx1G -Xms512m
 **Cron job for daily backups**:
 ```bash
 # Add to crontab (crontab -e)
-0 2 * * * cd /path/to/PhotoSort-V1 && docker-compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > /backups/photosort_$(date +\%Y\%m\%d).sql.gz
+0 2 * * * cd /path/to/PhotoSort-V1 && docker compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > /backups/photosort_$(date +\%Y\%m\%d).sql.gz
 ```
 
 ### Monitoring
@@ -575,7 +575,7 @@ docker stats
 
 ## Docker Compose Reference
 
-### Full docker-compose.yml Structure
+### Full docker compose.yml Structure
 
 ```yaml
 services:
@@ -596,34 +596,34 @@ networks:
 
 ```bash
 # Build
-docker-compose build
+docker compose build
 ./scripts/build-docker.sh
 
 # Start
-docker-compose up -d
+docker compose up -d
 ./scripts/start.sh
 
 # Stop
-docker-compose down
+docker compose down
 ./scripts/stop.sh
 
 # Logs
-docker-compose logs -f
-docker-compose logs -f backend
+docker compose logs -f
+docker compose logs -f backend
 
 # Status
-docker-compose ps
+docker compose ps
 
 # Restart
-docker-compose restart
+docker compose restart
 
 # Shell access
-docker-compose exec backend sh
-docker-compose exec database psql -U photosort_user -d PhotoSortData
+docker compose exec backend sh
+docker compose exec database psql -U photosort_user -d PhotoSortData
 
 # Rebuild specific service
-docker-compose build --no-cache backend
-docker-compose up -d backend
+docker compose build --no-cache backend
+docker compose up -d backend
 ```
 
 ---
@@ -640,7 +640,7 @@ docker-compose up -d backend
 ## Support
 
 For issues or questions:
-1. Check logs: `docker-compose logs -f`
+1. Check logs: `docker compose logs -f`
 2. Review troubleshooting section above
 3. Verify `.env` configuration
 4. Check health endpoints

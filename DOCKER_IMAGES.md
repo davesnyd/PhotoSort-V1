@@ -104,27 +104,27 @@ SPRING_PROFILES_ACTIVE=prod
 
 **Start alone**:
 ```bash
-docker-compose up -d backend
+docker compose up -d backend
 ```
 
 **Stop**:
 ```bash
-docker-compose stop backend
+docker compose stop backend
 ```
 
 **Restart**:
 ```bash
-docker-compose restart backend
+docker compose restart backend
 ```
 
 **View logs**:
 ```bash
-docker-compose logs -f backend
+docker compose logs -f backend
 ```
 
 **Shell access**:
 ```bash
-docker-compose exec backend sh
+docker compose exec backend sh
 ```
 
 ### Build Details
@@ -217,27 +217,27 @@ server {
 
 **Start alone**:
 ```bash
-docker-compose up -d frontend
+docker compose up -d frontend
 ```
 
 **Stop**:
 ```bash
-docker-compose stop frontend
+docker compose stop frontend
 ```
 
 **Restart**:
 ```bash
-docker-compose restart frontend
+docker compose restart frontend
 ```
 
 **View logs**:
 ```bash
-docker-compose logs -f frontend
+docker compose logs -f frontend
 ```
 
 **Shell access**:
 ```bash
-docker-compose exec frontend sh
+docker compose exec frontend sh
 ```
 
 ### Build Details
@@ -317,37 +317,37 @@ PGDATA=/var/lib/postgresql/data/pgdata  # Data directory
 
 **Start alone**:
 ```bash
-docker-compose up -d database
+docker compose up -d database
 ```
 
 **Stop**:
 ```bash
-docker-compose stop database
+docker compose stop database
 ```
 
 **Restart**:
 ```bash
-docker-compose restart database
+docker compose restart database
 ```
 
 **View logs**:
 ```bash
-docker-compose logs -f database
+docker compose logs -f database
 ```
 
 **Database shell**:
 ```bash
-docker-compose exec database psql -U photosort_user -d PhotoSortData
+docker compose exec database psql -U photosort_user -d PhotoSortData
 ```
 
 **Backup database**:
 ```bash
-docker-compose exec database pg_dump -U photosort_user PhotoSortData > backup_$(date +%Y%m%d).sql
+docker compose exec database pg_dump -U photosort_user PhotoSortData > backup_$(date +%Y%m%d).sql
 ```
 
 **Restore database**:
 ```bash
-cat backup_20251205.sql | docker-compose exec -T database psql -U photosort_user PhotoSortData
+cat backup_20251205.sql | docker compose exec -T database psql -U photosort_user PhotoSortData
 ```
 
 ### Build Details
@@ -394,7 +394,7 @@ docker volume inspect photosort_postgres_data | grep Mountpoint
 **Backup volumes**:
 ```bash
 # Database (via pg_dump - RECOMMENDED)
-docker-compose exec database pg_dump -U photosort_user PhotoSortData | gzip > db_backup_$(date +%Y%m%d).sql.gz
+docker compose exec database pg_dump -U photosort_user PhotoSortData | gzip > db_backup_$(date +%Y%m%d).sql.gz
 
 # Photo data (direct volume backup)
 docker run --rm -v photosort_photo_data:/data -v $(pwd):/backup alpine tar czf /backup/photos_$(date +%Y%m%d).tar.gz -C /data .
@@ -406,7 +406,7 @@ docker run --rm -v photosort_backend_logs:/data -v $(pwd):/backup alpine tar czf
 **Restore volumes**:
 ```bash
 # Database
-gunzip < db_backup_20251205.sql.gz | docker-compose exec -T database psql -U photosort_user PhotoSortData
+gunzip < db_backup_20251205.sql.gz | docker compose exec -T database psql -U photosort_user PhotoSortData
 
 # Photo data
 docker run --rm -v photosort_photo_data:/data -v $(pwd):/backup alpine tar xzf /backup/photos_20251205.tar.gz -C /data
@@ -415,10 +415,10 @@ docker run --rm -v photosort_photo_data:/data -v $(pwd):/backup alpine tar xzf /
 **Delete volumes** (DESTRUCTIVE):
 ```bash
 # Stop containers first
-docker-compose down
+docker compose down
 
 # Delete all data (CAUTION!)
-docker-compose down -v
+docker compose down -v
 ```
 
 ---
@@ -460,7 +460,7 @@ From the host machine:
 
 ### Port Mapping
 
-Defined in `docker-compose.yml`:
+Defined in `docker compose.yml`:
 ```yaml
 frontend:
   ports:
@@ -493,11 +493,11 @@ DB_PORT=5433
 # Using script
 ./scripts/start.sh
 
-# Using docker-compose
-docker-compose up -d
+# Using docker compose
+docker compose up -d
 
 # With build (if images changed)
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 **Stop all services**:
@@ -505,78 +505,78 @@ docker-compose up -d --build
 # Using script
 ./scripts/stop.sh
 
-# Using docker-compose
-docker-compose down
+# Using docker compose
+docker compose down
 
 # Stop and remove volumes (DELETES DATA!)
-docker-compose down -v
+docker compose down -v
 ```
 
 **Restart all services**:
 ```bash
-docker-compose restart
+docker compose restart
 ```
 
 **View status**:
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### Individual Container Operations
 
 **Start specific container**:
 ```bash
-docker-compose up -d database
-docker-compose up -d backend
-docker-compose up -d frontend
+docker compose up -d database
+docker compose up -d backend
+docker compose up -d frontend
 ```
 
 **Stop specific container**:
 ```bash
-docker-compose stop database
-docker-compose stop backend
-docker-compose stop frontend
+docker compose stop database
+docker compose stop backend
+docker compose stop frontend
 ```
 
 **Restart specific container**:
 ```bash
-docker-compose restart database
-docker-compose restart backend
-docker-compose restart frontend
+docker compose restart database
+docker compose restart backend
+docker compose restart frontend
 ```
 
 **Remove specific container**:
 ```bash
-docker-compose rm -f database
-docker-compose rm -f backend
-docker-compose rm -f frontend
+docker compose rm -f database
+docker compose rm -f backend
+docker compose rm -f frontend
 ```
 
 ### Advanced Operations
 
 **Start with logs visible**:
 ```bash
-docker-compose up
+docker compose up
 ```
 
 **Rebuild and start**:
 ```bash
-docker-compose up -d --build --force-recreate
+docker compose up -d --build --force-recreate
 ```
 
 **Scale containers** (not applicable for PhotoSort, but shown for reference):
 ```bash
-docker-compose up -d --scale backend=3
+docker compose up -d --scale backend=3
 ```
 
 **Stop without removing containers**:
 ```bash
-docker-compose stop
+docker compose stop
 ```
 
 **Start stopped containers**:
 ```bash
-docker-compose start
+docker compose start
 ```
 
 ---
@@ -597,12 +597,12 @@ sudo usermod -aG docker $USER
 # Log out and back in for group to take effect
 
 # Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+sudo chmod +x /usr/local/bin/docker compose
 
 # Verify installation
 docker --version
-docker-compose --version
+docker compose --version
 ```
 
 ### Deployment Steps
@@ -634,7 +634,7 @@ OAUTH_CLIENT_SECRET=your_google_client_secret
 ./scripts/build-docker.sh
 
 # Or manually
-docker-compose build
+docker compose build
 ```
 
 **4. Deploy**:
@@ -642,16 +642,16 @@ docker-compose build
 ./scripts/deploy-docker.sh
 
 # Or manually
-docker-compose up -d
+docker compose up -d
 ```
 
 **5. Verify deployment**:
 ```bash
 # Check container status
-docker-compose ps
+docker compose ps
 
 # Check logs
-docker-compose logs -f
+docker compose logs -f
 
 # Test endpoints
 curl http://localhost:8080/actuator/health
@@ -690,8 +690,8 @@ After=docker.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/path/to/PhotoSort-V1
-ExecStart=/usr/local/bin/docker-compose up -d
-ExecStop=/usr/local/bin/docker-compose down
+ExecStart=/usr/local/bin/docker compose up -d
+ExecStop=/usr/local/bin/docker compose down
 TimeoutStartSec=0
 
 [Install]
@@ -719,7 +719,7 @@ DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p $BACKUP_DIR
 
 cd /path/to/PhotoSort-V1
-docker-compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > $BACKUP_DIR/db_$DATE.sql.gz
+docker compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > $BACKUP_DIR/db_$DATE.sql.gz
 
 # Rotate backups (keep 7 days)
 find $BACKUP_DIR -name "db_*.sql.gz" -mtime +7 -delete
@@ -854,7 +854,7 @@ mkdir -p $TEMP_DIR
 
 # Backup database
 cd /home/ubuntu/PhotoSort-V1
-docker-compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > $TEMP_DIR/db_$DATE.sql.gz
+docker compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > $TEMP_DIR/db_$DATE.sql.gz
 
 # Upload to S3
 aws s3 cp $TEMP_DIR/db_$DATE.sql.gz $BUCKET/
@@ -1073,6 +1073,6 @@ Copilot automatically:
 
 - [DOCKER.md](DOCKER.md) - Comprehensive Docker guide
 - [BUILD_AND_DEPLOY.md](BUILD_AND_DEPLOY.md) - Non-Docker deployment
-- [docker-compose.yml](docker-compose.yml) - Service definitions
+- [docker compose.yml](docker compose.yml) - Service definitions
 - [PhotoSortServices/Dockerfile](PhotoSortServices/Dockerfile) - Backend image
 - [photosort-frontend/Dockerfile](photosort-frontend/Dockerfile) - Frontend image

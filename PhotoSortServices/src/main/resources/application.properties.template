@@ -35,6 +35,9 @@ logging.level.com.photoSort=DEBUG
 # Server Configuration
 server.port=8080
 
+# Trust forwarded headers from nginx proxy (required for Docker deployment)
+server.forward-headers-strategy=native
+
 # OAuth 2.0 Configuration (Google)
 # Get these from: https://console.cloud.google.com/apis/credentials
 # IMPORTANT: Replace with YOUR actual OAuth credentials

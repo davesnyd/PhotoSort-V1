@@ -30,7 +30,7 @@ lsof -i :5432  # Database
 # 2. Check if database is running
 sudo systemctl status postgresql
 # Or for Docker:
-docker-compose ps database
+docker compose ps database
 
 # 3. Check Java version
 java -version  # Should be 17+
@@ -105,8 +105,8 @@ mvn spring-boot:run
 **Docker**:
 ```bash
 # Rebuild images
-docker-compose build --no-cache
-docker-compose up -d --force-recreate
+docker compose build --no-cache
+docker compose up -d --force-recreate
 ```
 
 ---
@@ -187,7 +187,7 @@ ulimit -n 4096
 tail -f PhotoSortServices/logs/photosort.log
 
 # Or for Docker:
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Test endpoint directly
 curl -v http://localhost:8080/api/photos
@@ -498,7 +498,7 @@ docker pull eclipse-temurin:17-jre-alpine
 docker builder prune -a
 
 # Rebuild
-docker-compose build --no-cache
+docker compose build --no-cache
 ```
 
 **Error**: `ERROR [internal] load metadata for ...`
@@ -528,8 +528,8 @@ lsof -i :8080
 BACKEND_PORT=8888
 
 # Restart containers
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 **Error**: `exec: "sh": executable file not found`
@@ -548,10 +548,10 @@ RUN apk add --no-cache bash
 **Diagnosis**:
 ```bash
 # Check container logs
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Check container status
-docker-compose ps
+docker compose ps
 
 # Inspect container
 docker inspect photosort-backend
@@ -696,7 +696,7 @@ npm --version
 mvn --version
 psql --version
 docker --version
-docker-compose --version
+docker compose --version
 ```
 
 **2. Application Logs**:
@@ -711,7 +711,7 @@ tail -100 PhotoSortServices/logs/photosort.log
 sudo tail -100 /var/log/postgresql/postgresql-13-main.log
 
 # Docker logs
-docker-compose logs --tail=100
+docker compose logs --tail=100
 ```
 
 **3. Configuration**:
@@ -773,10 +773,10 @@ cd photosort-frontend && npm start &
 
 **Docker**:
 ```bash
-docker-compose restart
+docker compose restart
 # Or full rebuild:
-docker-compose down
-docker-compose up -d --build
+docker compose down
+docker compose up -d --build
 ```
 
 ### Clear All Caches

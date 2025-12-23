@@ -30,7 +30,7 @@ curl http://localhost:3000/health
 psql -U photosort_user -d PhotoSortData -c "SELECT 1;"
 
 # Docker (if using)
-docker-compose ps
+docker compose ps
 ```
 
 **2. Monitor Disk Space**:
@@ -57,7 +57,7 @@ grep -i error PhotoSortServices/logs/photosort.log | tail -50
 sudo tail -100 /var/log/postgresql/postgresql-13-main.log | grep ERROR
 
 # Docker logs
-docker-compose logs --since 24h | grep -i error
+docker compose logs --since 24h | grep -i error
 ```
 
 ### Weekly Tasks
@@ -259,7 +259,7 @@ crontab -e
 
 ```bash
 # Database backup
-docker-compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > backup_$(date +%Y%m%d).sql.gz
+docker compose exec -T database pg_dump -U photosort_user PhotoSortData | gzip > backup_$(date +%Y%m%d).sql.gz
 
 # Volume backup
 docker run --rm -v photosort_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_$(date +%Y%m%d).tar.gz -C /data .
@@ -366,17 +366,17 @@ git reset --hard $(cat /tmp/last-working-commit.txt)
 git pull origin master
 
 # Rebuild images
-docker-compose build --no-cache
+docker compose build --no-cache
 
 # Stop old containers
-docker-compose down
+docker compose down
 
 # Start new containers
-docker-compose up -d
+docker compose up -d
 
 # Verify
-docker-compose ps
-docker-compose logs -f
+docker compose ps
+docker compose logs -f
 ```
 
 ### Update Dependencies
@@ -449,10 +449,10 @@ iotop -p $(pgrep -f spring-boot)
 docker stats
 
 # Logs
-docker-compose logs -f --tail=100
+docker compose logs -f --tail=100
 
 # Health status
-docker-compose ps
+docker compose ps
 
 # Resource usage
 docker system df
@@ -569,14 +569,14 @@ VACUUM ANALYZE;
 ```bash
 # Stop application
 systemctl stop photosort-backend
-# Or: docker-compose stop backend
+# Or: docker compose stop backend
 
 # Run vacuum
 psql -U photosort_user -d PhotoSortData -c "VACUUM FULL ANALYZE;"
 
 # Start application
 systemctl start photosort-backend
-# Or: docker-compose start backend
+# Or: docker compose start backend
 ```
 
 ### Reindex Database

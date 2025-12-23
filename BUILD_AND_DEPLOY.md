@@ -31,7 +31,7 @@ npm --version        # Should show 9+
 mvn --version        # Should show 3.8+
 psql --version       # Should show 13+
 docker --version     # Should show 20.10+
-docker-compose --version  # Should show 1.29+
+docker compose --version  # Should show 1.29+
 ```
 
 ---
@@ -315,13 +315,13 @@ See [DOCKER.md](DOCKER.md) for comprehensive Docker deployment instructions.
 Quick start:
 ```bash
 # Build and run all containers
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop all containers
-docker-compose down
+docker compose down
 ```
 
 ---
