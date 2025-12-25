@@ -68,3 +68,6 @@ volumes/
 # Container logs
 *.log
 logs/
+
+# Screenshots (temporary/documentation work)
+screencaps/
