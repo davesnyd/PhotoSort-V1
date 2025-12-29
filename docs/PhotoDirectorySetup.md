@@ -253,39 +253,37 @@ volumes:
 
 **Behavior:** Every 10 minutes, application runs `git pull` and processes new photos.
 
-### Scenario 3: Git Repository on the Host Machine (Local Server)
+### Scenario 3: Git Repository Remote is on the Host Machine
 
-Your photo repository's remote origin is on the same machine running Docker (or on your local network), not on GitHub.
+Your photo repository's remote origin is on the same machine running Docker (or on your local network), not on GitHub. You want the application to automatically pull from this local remote.
 
 **Understanding the Setup:**
 - The container runs in an isolated network
-- To access the host machine from inside the container, use `host.docker.internal` (Docker Desktop) or the host's IP address
-- For bare repositories on the host, you need to mount them or expose via network
+- To access the host machine from inside the container, use `host.docker.internal` or the host's IP address
+- A "bare repository" (e.g., `photos.git`) is a **directory** containing only git metadata, used as a central remote
 
-**Option A: Host has a bare repository serving as origin**
+**What is a bare repository?**
+```bash
+# A bare repo is a FOLDER, not a file. Create one with:
+git init --bare /home/user/repos/photos.git
 
-If you have a bare git repository on your host (e.g., `/home/user/repos/photos.git`):
+# This creates a directory structure like:
+# /home/user/repos/photos.git/
+#   ├── HEAD
+#   ├── config
+#   ├── objects/
+#   ├── refs/
+#   └── ...
 
-```yaml
-# docker-compose.yml
-services:
-  backend:
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Allows container to reach host
-    environment:
-      GIT_REPO_PATH: /app/photos
-      # Use host.docker.internal to reference the Docker host
-      # Note: Requires git daemon or SSH server running on host
-      GIT_REPO_URL: git://host.docker.internal/photos.git
-      # Or for SSH (if SSH server is running on host):
-      # GIT_REPO_URL: ssh://user@host.docker.internal/home/user/repos/photos.git
-    volumes:
-      - "/home/user/Pictures:/app/photos"
+# Then configure your working repo to use it as origin:
+cd /home/user/Pictures
+git remote add origin /home/user/repos/photos.git
+git push -u origin main
 ```
 
-**Option B: Mount the bare repository into the container**
+**Option A: Mount the bare repository into the container (Recommended)**
 
-Simpler approach - mount both the working directory AND the bare repo:
+Mount both your working directory AND the bare repo, then use a `file://` URL:
 
 ```yaml
 # docker-compose.yml
@@ -295,11 +293,35 @@ services:
       GIT_REPO_PATH: /app/photos
       GIT_REPO_URL: file:///app/repos/photos.git  # file:// URL to mounted bare repo
     volumes:
-      - "/home/user/Pictures:/app/photos"
-      - "/home/user/repos/photos.git:/app/repos/photos.git:ro"  # Mount bare repo read-only
+      - "/home/user/Pictures:/app/photos"                       # Working directory
+      - "/home/user/repos/photos.git:/app/repos/photos.git:ro"  # Bare repo (read-only)
 ```
 
-**Option C: Local network server**
+**Behavior:** Every poll interval, the application runs `git pull` from the mounted bare repo and processes new photos.
+
+**Option B: Use host.docker.internal with git daemon or SSH**
+
+If you prefer not to mount the bare repo, you can expose it via network:
+
+```yaml
+# docker-compose.yml
+services:
+  backend:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Allows container to reach host
+    environment:
+      GIT_REPO_PATH: /app/photos
+      # For git daemon (requires `git daemon` running on host):
+      GIT_REPO_URL: git://host.docker.internal/repos/photos.git
+      # Or for SSH (requires SSH server on host):
+      # GIT_REPO_URL: ssh://user@host.docker.internal/home/user/repos/photos.git
+    volumes:
+      - "/home/user/Pictures:/app/photos"
+```
+
+**Note:** This requires running a git daemon or SSH server on your host.
+
+**Option C: Local network server (Gitea, GitLab, etc.)**
 
 If the git server is another machine on your network:
 
@@ -314,32 +336,33 @@ environment:
   GIT_TOKEN: your-token
 ```
 
-**Option D: No remote, manage git on host (Recommended for simplicity)**
+### Scenario 4: No Remote - Manual Scans Only
 
-The simplest approach - don't configure a remote URL. Manage git operations on the host:
+Use this if you don't have or want a remote repository. Photos are added directly to the directory on the host, and you trigger scans manually.
 
 ```yaml
 # docker-compose.yml
 environment:
   GIT_REPO_PATH: /app/photos
-  # GIT_REPO_URL: (leave empty)
+  # GIT_REPO_URL: (leave empty or omit - no automatic git pull)
 volumes:
   - "/home/user/Pictures:/app/photos"
 ```
 
-Then on your host machine:
+**Workflow:**
 ```bash
-# Add new photos and commit
+# On your host machine, add photos and commit
 cd /home/user/Pictures
+cp /camera/DCIM/*.jpg .
 git add .
 git commit -m "Added vacation photos"
-
-# Trigger rescan in the application UI, or wait for next poll cycle
 ```
 
-**Behavior:** The application detects new commits in the mounted directory and processes new photos. You control when commits happen from your host machine.
+Then in the application UI, click **"Rescan Photos Now"** to process new photos.
 
-### Scenario 4: Multiple Machines Syncing
+**Behavior:** No automatic git pull. The application only scans when you manually trigger it. Use this for simple single-machine setups where you don't need remote sync.
+
+### Scenario 5: Multiple Machines Syncing
 
 You have the same repository cloned on multiple machines.
 
