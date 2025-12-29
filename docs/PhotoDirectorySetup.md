@@ -1,21 +1,19 @@
 # Photo Directory Setup Guide
 Copyright 2025, David Snyderman
 
-This guide explains how to connect a photo directory on your local machine to the PhotoSort Docker container and configure the application to work with Git repositories.
+This guide explains how to connect a photo directory on your local machine to the PhotoSort Docker container.
 
 ## Overview
 
 PhotoSort uses a Git-based workflow for photo management:
-1. Photos are stored in a Git repository (local or remote like GitHub)
-2. The repository directory is mounted into the Docker container
-3. The application scans the directory for photos
-4. Optionally, the application can automatically pull updates from a remote repository
+1. Photos are stored in a Git repository
+2. The repository is mounted into the Docker container
+3. The application scans for photos and automatically pulls updates
 
 ## Prerequisites
 
 - Docker and Docker Compose installed
 - Git installed on your host machine
-- A directory containing your photos (with or without a Git repository)
 
 ---
 
@@ -25,23 +23,35 @@ PhotoSort uses a Git-based workflow for photo management:
 # 1. Copy the example configuration
 cp docker-compose.yml.example docker-compose.yml
 
-# 2. Edit docker-compose.yml - update the photo directory path (see Step 2 below)
+# 2. Edit docker-compose.yml - update the photo directory paths (see Step 3 below)
 
-# 3. Start the application
+# 3. Create/configure your .env file with git settings
+
+# 4. Start the application
 ./scripts/start.sh
 
-# 4. Log in and click "Rescan Photos Now" on the Configuration page
+# 5. Log in and click "Rescan Photos Now" on the Configuration page
 ```
 
 ---
 
-## Step 1: Prepare Your Photo Directory
+## Configuration Scenarios
 
-You have three options depending on your setup:
+Choose the scenario that matches your setup:
 
-### Option A: Local-Only Repository (No Remote Sync)
+| Scenario | Description | Automatic Git Pull? |
+|----------|-------------|---------------------|
+| [Scenario 1](#scenario-1-local-photos-no-git-sync) | Photos on local disk, no remote sync | No |
+| [Scenario 2](#scenario-2-sync-with-github-or-remote-server) | Sync with GitHub/GitLab | Yes |
+| [Scenario 3](#scenario-3-local-git-server-on-host-machine) | Host machine acts as git server | Yes |
 
-Use this if your photos are only on your local machine and you don't need to sync with GitHub or another remote.
+---
+
+## Scenario 1: Local Photos, No Git Sync
+
+Use this if your photos are only on your local machine and you don't need automatic git pull.
+
+### Step 1: Prepare your photo directory
 
 ```bash
 # Create directory if needed
@@ -50,439 +60,303 @@ mkdir -p /path/to/your/photos
 # Initialize as a git repository
 cd /path/to/your/photos
 git init
-
-# Add existing photos
 git add .
 git commit -m "Initial photo import"
 ```
 
-**Configuration for local-only:**
-- `GIT_REPO_PATH`: Set to container path (e.g., `/app/photos`)
-- `GIT_REPO_URL`: Leave empty or omit entirely
-- `GIT_USERNAME`: Not needed
-- `GIT_TOKEN`: Not needed
-
-The application will scan the directory but won't attempt git pull operations.
-
-### Option B: Clone from a Remote Repository (GitHub, GitLab, etc.)
-
-Use this if your photos are stored in a remote Git repository.
-
-```bash
-# Choose a location for your photos
-mkdir -p /path/to/your/photos
-cd /path/to/your/photos
-
-# Clone the repository
-git clone https://github.com/your-username/your-photos-repo.git .
-```
-
-**For private repositories**, use a personal access token:
-```bash
-git clone https://your-username:your-token@github.com/your-username/your-photos-repo.git .
-```
-
-**Configuration for remote sync:**
-- `GIT_REPO_PATH`: Set to container path (e.g., `/app/photos`)
-- `GIT_REPO_URL`: `https://github.com/your-username/your-photos-repo`
-- `GIT_USERNAME`: Your GitHub username
-- `GIT_TOKEN`: Your personal access token
-
-### Option C: Existing Local Repository with Remote
-
-If you already have a local repository that's connected to a remote:
-
-```bash
-# Verify remote is configured
-cd /path/to/your/photos
-git remote -v
-# Should show: origin  https://github.com/... (fetch/push)
-```
-
-Use the same configuration as Option B.
-
----
-
-## Step 2: Configure Docker Compose
-
-### Initial Setup
-
-```bash
-# Copy the example file (only needed once)
-cp docker-compose.yml.example docker-compose.yml
-```
-
-**Important:** `docker-compose.yml` is gitignored - your local configuration won't be committed to the repository.
-
-### Edit the Photo Directory Mount
-
-Open `docker-compose.yml` and find the backend volumes section. Update the photo directory path:
+### Step 2: Configure docker-compose.yml
 
 ```yaml
 services:
   backend:
     volumes:
       - backend_logs:/app/logs
-      # Update this line with YOUR photo directory:
-      - "/path/to/your/photos:/app/photos"
+      - /path/to/your/photos:/app/photos
 ```
 
-**Path Format Rules:**
-| Scenario | Example |
-|----------|---------|
-| Simple path | `/home/user/Photos:/app/photos` |
-| Path with spaces | `"/home/user/My Photos:/app/photos"` |
-| Network drive | `/mnt/nas/family-photos:/app/photos` |
+### Step 3: Configure .env
 
-**The container path (`/app/photos`) must match the `GIT_REPO_PATH` environment variable.**
+```bash
+GIT_REPO_PATH=/app/photos
+GIT_REPO_URL=
+```
+
+### Step 4: Fix permissions
+
+```bash
+chmod -R o+w /path/to/your/photos/.git
+```
+
+### Workflow
+
+Add photos manually and use "Rescan Photos Now" in the UI:
+```bash
+cp /camera/*.jpg /path/to/your/photos/
+cd /path/to/your/photos
+git add . && git commit -m "Added photos"
+# Then click "Rescan Photos Now" in the Configuration page
+```
 
 ---
 
-## Step 3: Configure Git Settings
+## Scenario 2: Sync with GitHub or Remote Server
 
-### Option A: Environment Variables in docker-compose.yml
+Use this if your photos sync with a GitHub/GitLab repository.
 
-Edit the environment section of the backend service:
+### Step 1: Clone the repository
+
+```bash
+git clone https://github.com/your-username/your-photos-repo.git /path/to/photos
+```
+
+### Step 2: Configure docker-compose.yml
 
 ```yaml
 services:
   backend:
-    environment:
-      # Path inside container (must match volume mount)
-      GIT_REPO_PATH: /app/photos
-
-      # Remote URL - set for automatic git pull, or leave empty for local-only
-      GIT_REPO_URL: https://github.com/user/repo    # or leave empty
-
-      # Authentication (only needed for private remote repositories)
-      GIT_USERNAME: your-username
-      GIT_TOKEN: your-personal-access-token
-
-      # How often to check for updates (minutes)
-      GIT_POLL_INTERVAL_MINUTES: 5
+    volumes:
+      - backend_logs:/app/logs
+      - /path/to/photos:/app/photos
 ```
 
-### Option B: Using a .env File (Recommended for Secrets)
-
-Create a `.env` file in the project root:
+### Step 3: Configure .env
 
 ```bash
-# Git Configuration
+GIT_REPO_PATH=/app/photos
 GIT_REPO_URL=https://github.com/your-username/your-photos-repo
 GIT_USERNAME=your-username
-GIT_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
-GIT_POLL_INTERVAL_MINUTES=10
+GIT_TOKEN=your-personal-access-token
 ```
 
-**Note:** `.env` is already in `.gitignore` - your secrets won't be committed.
+### Step 4: Fix permissions
 
-### Option C: Using the Configuration UI
+```bash
+chmod -R o+w /path/to/photos/.git
+```
 
-After starting the application:
+### Workflow
 
-1. Log in as an admin user
-2. Navigate to **Configuration** (`/configuration`)
-3. Find **Git Configuration** section
-4. Fill in the fields and click **Save**
+The application automatically pulls from GitHub every 5 minutes and processes new photos.
 
 ---
 
-## Step 4: Start the Application
+## Scenario 3: Local Git Server on Host Machine
+
+Use this if you want your host machine to act as a git server for the container. This allows automatic git pull without needing GitHub.
+
+### Architecture
+
+```
+Host Machine:
+├── /path/to/Photos.git          (bare repo - acts as "server")
+└── /path/to/photosWorkingCopy   (working copy - mounted in container)
+
+Container:
+├── /app/repos/Photos.git        (mounted bare repo)
+└── /app/photos                  (mounted working copy)
+```
+
+### Step 1: Create the bare repository (git server)
+
+A bare repository is a directory containing only git metadata (no working files). It acts as a central server.
 
 ```bash
-# Start all containers
+# Create directory for bare repo
+mkdir -p /home/user/dockerpaths
+
+# If you have an existing photo repository, create bare clone from it:
+git clone --bare /path/to/existing/photos /home/user/dockerpaths/Photos.git
+
+# OR if starting fresh, initialize empty bare repo:
+git init --bare /home/user/dockerpaths/Photos.git
+```
+
+### Step 2: Create the working copy for the container
+
+```bash
+# Clone from the bare repo
+git clone /home/user/dockerpaths/Photos.git /home/user/dockerpaths/photosWorkingCopy
+
+# Verify photos are there
+ls /home/user/dockerpaths/photosWorkingCopy
+```
+
+### Step 3: Set the git remote to use container paths
+
+The working copy's remote must point to where the bare repo will be mounted inside the container:
+
+```bash
+cd /home/user/dockerpaths/photosWorkingCopy
+git remote set-url origin /app/repos/Photos.git
+
+# Verify
+git remote -v
+# Should show: origin  /app/repos/Photos.git (fetch)
+#              origin  /app/repos/Photos.git (push)
+```
+
+### Step 4: Configure docker-compose.yml
+
+Mount both the working copy AND the bare repo:
+
+```yaml
+services:
+  backend:
+    volumes:
+      - backend_logs:/app/logs
+      - /home/user/dockerpaths/photosWorkingCopy:/app/photos
+      - /home/user/dockerpaths/Photos.git:/app/repos/Photos.git:ro
+```
+
+**Note:** The bare repo is mounted read-only (`:ro`) since the container only pulls from it.
+
+### Step 5: Configure .env
+
+```bash
+GIT_REPO_PATH=/app/photos
+GIT_REPO_URL=file:///app/repos/Photos.git
+GIT_USERNAME=
+GIT_TOKEN=
+```
+
+### Step 6: Fix permissions (CRITICAL)
+
+The container runs as user `photosort` (uid 100), but the mounted directories are owned by your host user. The container needs write access to the `.git` directory:
+
+```bash
+chmod -R o+w /home/user/dockerpaths/photosWorkingCopy/.git
+```
+
+### Step 7: Start and test
+
+```bash
 ./scripts/start.sh
 
-# Or using docker compose directly
-docker compose up -d
-
-# Verify containers are running
-docker compose ps
+# Check logs for successful processing
+docker compose logs -f backend | grep -i "git\|photo\|processed"
 ```
 
----
+You should see:
+```
+Starting Git repository poll
+Successfully processed image file: photo1.jpg
+...
+Git repository poll completed successfully, processed N files
+```
 
-## Step 5: Initial Photo Scan
+### Workflow for Adding New Photos
 
-After startup, trigger the initial scan:
-
-1. Open `http://localhost:3000` in your browser
-2. Log in with your admin account
-3. Go to **Configuration** page
-4. Click **"Rescan Photos Now"**
-
-Monitor progress:
 ```bash
-docker compose logs -f backend
-```
+# 1. Add photos to the working copy on host
+cp /camera/*.jpg /home/user/dockerpaths/photosWorkingCopy/
 
----
-
-## Configuration Scenarios
-
-### Scenario 1: Local Photos, No Sync
-
-Your photos are on your computer, no remote repository needed.
-
-```yaml
-# docker-compose.yml
-environment:
-  GIT_REPO_PATH: /app/photos
-  # GIT_REPO_URL: (leave empty or omit)
-volumes:
-  - "/home/user/Pictures:/app/photos"
-```
-
-**Behavior:** Application scans `/app/photos` but doesn't attempt git pull.
-
-### Scenario 2: Sync with GitHub
-
-Your photos sync with a GitHub repository.
-
-```yaml
-# docker-compose.yml
-environment:
-  GIT_REPO_PATH: /app/photos
-  GIT_REPO_URL: https://github.com/myuser/photos
-  GIT_USERNAME: myuser
-  GIT_TOKEN: ${GIT_TOKEN}  # From .env file
-  GIT_POLL_INTERVAL_MINUTES: 10
-volumes:
-  - "/home/user/Pictures:/app/photos"
-```
-
-**Behavior:** Every 10 minutes, application runs `git pull` and processes new photos.
-
-### Scenario 3: Git Repository Remote is on the Host Machine
-
-Your photo repository's remote origin is on the same machine running Docker (or on your local network), not on GitHub. You want the application to automatically pull from this local remote.
-
-**Understanding the Setup:**
-- The container runs in an isolated network
-- To access the host machine from inside the container, use `host.docker.internal` or the host's IP address
-- A "bare repository" (e.g., `photos.git`) is a **directory** containing only git metadata, used as a central remote
-
-**What is a bare repository?**
-```bash
-# A bare repo is a FOLDER, not a file. Create one with:
-git init --bare /home/user/repos/photos.git
-
-# This creates a directory structure like:
-# /home/user/repos/photos.git/
-#   ├── HEAD
-#   ├── config
-#   ├── objects/
-#   ├── refs/
-#   └── ...
-
-# Then configure your working repo to use it as origin:
-cd /home/user/Pictures
-git remote add origin /home/user/repos/photos.git
-git push -u origin main
-```
-
-**Option A: Mount the bare repository into the container (Recommended)**
-
-Mount both your working directory AND the bare repo, then use a `file://` URL:
-
-```yaml
-# docker-compose.yml
-services:
-  backend:
-    environment:
-      GIT_REPO_PATH: /app/photos
-      GIT_REPO_URL: file:///app/repos/photos.git  # file:// URL to mounted bare repo
-    volumes:
-      - "/home/user/Pictures:/app/photos"                       # Working directory
-      - "/home/user/repos/photos.git:/app/repos/photos.git:ro"  # Bare repo (read-only)
-```
-
-**Behavior:** Every poll interval, the application runs `git pull` from the mounted bare repo and processes new photos.
-
-**Option B: Use host.docker.internal with git daemon or SSH**
-
-If you prefer not to mount the bare repo, you can expose it via network:
-
-```yaml
-# docker-compose.yml
-services:
-  backend:
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Allows container to reach host
-    environment:
-      GIT_REPO_PATH: /app/photos
-      # For git daemon (requires `git daemon` running on host):
-      GIT_REPO_URL: git://host.docker.internal/repos/photos.git
-      # Or for SSH (requires SSH server on host):
-      # GIT_REPO_URL: ssh://user@host.docker.internal/home/user/repos/photos.git
-    volumes:
-      - "/home/user/Pictures:/app/photos"
-```
-
-**Note:** This requires running a git daemon or SSH server on your host.
-
-**Option C: Local network server (Gitea, GitLab, etc.)**
-
-If the git server is another machine on your network:
-
-```yaml
-# docker-compose.yml
-environment:
-  GIT_REPO_PATH: /app/photos
-  GIT_REPO_URL: http://192.168.1.100:3000/user/photos.git  # Gitea/GitLab on LAN
-  # Or SSH:
-  # GIT_REPO_URL: ssh://git@192.168.1.100/repos/photos.git
-  GIT_USERNAME: your-username
-  GIT_TOKEN: your-token
-```
-
-### Scenario 4: No Remote - Manual Scans Only
-
-Use this if you don't have or want a remote repository. Photos are added directly to the directory on the host, and you trigger scans manually.
-
-```yaml
-# docker-compose.yml
-environment:
-  GIT_REPO_PATH: /app/photos
-  # GIT_REPO_URL: (leave empty or omit - no automatic git pull)
-volumes:
-  - "/home/user/Pictures:/app/photos"
-```
-
-**Workflow:**
-```bash
-# On your host machine, add photos and commit
-cd /home/user/Pictures
-cp /camera/DCIM/*.jpg .
+# 2. Commit and push to bare repo
+cd /home/user/dockerpaths/photosWorkingCopy
 git add .
 git commit -m "Added vacation photos"
+git push origin main
+
+# 3. Container automatically pulls on next poll cycle (every 5 min)
+#    Or click "Rescan Photos Now" in the Configuration page
 ```
-
-Then in the application UI, click **"Rescan Photos Now"** to process new photos.
-
-**Behavior:** No automatic git pull. The application only scans when you manually trigger it. Use this for simple single-machine setups where you don't need remote sync.
-
-### Scenario 5: Multiple Machines Syncing
-
-You have the same repository cloned on multiple machines.
-
-1. Each machine has its own `docker-compose.yml` with its local path
-2. All point to the same remote `GIT_REPO_URL`
-3. Each machine pulls updates automatically
-4. Commit and push new photos from any machine to share with others
-
----
-
-## How Automatic Syncing Works
-
-When `GIT_REPO_URL` is configured:
-
-1. **Scheduled Polling** (every N minutes):
-   - Application executes `git pull` on the repository
-   - Compares current commit with last processed commit
-   - Identifies new or changed image files
-
-2. **Photo Processing** (for each new/changed photo):
-   - Extracts EXIF metadata (date, location, camera)
-   - Generates thumbnails
-   - Runs AI tagging (if configured)
-   - Associates with user based on git commit author email
-
-3. **Supported Formats:**
-   `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.tiff`, `.tif`, `.webp`
-
-When `GIT_REPO_URL` is empty:
-- No automatic git pull
-- Use "Rescan Photos Now" button to manually trigger scans
-- Good for local-only setups where you add photos directly to the directory
 
 ---
 
 ## Configuration Reference
 
-| Setting | Env Variable | Default | Description |
-|---------|--------------|---------|-------------|
-| Repository Path | `GIT_REPO_PATH` | `/app/photos` | Container path where photos are mounted |
-| Repository URL | `GIT_REPO_URL` | (empty) | Remote Git URL; leave empty for local-only |
-| Username | `GIT_USERNAME` | (empty) | Git username for private repos |
-| Token | `GIT_TOKEN` | (empty) | Personal access token for private repos |
-| Poll Interval | `GIT_POLL_INTERVAL_MINUTES` | `5` | Minutes between automatic git pulls |
+### Environment Variables (.env file)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `GIT_REPO_PATH` | Path inside container where photos are mounted | `/app/photos` |
+| `GIT_REPO_URL` | Remote URL for git pull (or empty for no auto-pull) | `file:///app/repos/Photos.git` |
+| `GIT_USERNAME` | Username for authenticated repos | `myuser` |
+| `GIT_TOKEN` | Personal access token for authenticated repos | `ghp_xxx` |
+| `GIT_POLL_INTERVAL_MINUTES` | How often to pull (default: 5) | `10` |
+
+### docker-compose.yml Volume Formats
+
+```yaml
+volumes:
+  # Simple path
+  - /home/user/photos:/app/photos
+
+  # Path with spaces (use quotes)
+  - "/home/user/My Photos:/app/photos"
+
+  # Read-only mount
+  - /path/to/repo.git:/app/repos/repo.git:ro
+```
 
 ---
 
 ## Troubleshooting
 
-### Container won't start - Volume path error
+### Error: "Creating lock file failed" or permission errors
+
+**Cause:** Container user can't write to mounted `.git` directory.
+
+**Solution:**
+```bash
+chmod -R o+w /path/to/your/photos/.git
+```
+
+### Error: "Invalid remote: origin"
+
+**Cause:** The git remote URL points to a path that doesn't exist inside the container.
+
+**Solution:** Ensure the remote URL uses container paths:
+```bash
+cd /path/to/working/copy
+git remote set-url origin /app/repos/Photos.git  # Container path, not host path
+```
+
+### Photos not appearing after scan
+
+1. **Check logs:**
+   ```bash
+   docker compose logs backend | grep -i "git\|photo\|error"
+   ```
+
+2. **Verify mounts:**
+   ```bash
+   docker compose exec backend sh -c "ls -la /app/photos"
+   docker compose exec backend sh -c "ls -la /app/repos/Photos.git"
+   ```
+
+3. **Check git remote inside container context:**
+   ```bash
+   cat /path/to/workingcopy/.git/config
+   # Remote URL should use /app/... paths
+   ```
+
+### Container won't start - volume path error
 
 **Error:** `service "backend" refers to undefined volume`
 
-**Solution:** Ensure the path:
-- Has a leading `/`
-- Is quoted if it contains spaces
-- Exists on the host machine
-
+**Solution:** Ensure paths have leading `/` and use quotes if they contain spaces:
 ```yaml
 # Wrong
 - home/user/photos:/app/photos
 
 # Correct
-- "/home/user/photos:/app/photos"
+- /home/user/photos:/app/photos
+- "/home/user/My Photos:/app/photos"
 ```
 
-### Photos not being detected
-
-1. **Verify the mount:**
-   ```bash
-   docker compose exec backend ls -la /app/photos
-   ```
-
-2. **Check for .git directory:**
-   ```bash
-   docker compose exec backend ls -la /app/photos/.git
-   ```
-
-3. **View logs:**
-   ```bash
-   docker compose logs backend | grep -i "photo\|git\|scan"
-   ```
-
-### Git pull fails
-
-**For private repositories**, ensure:
-1. `GIT_USERNAME` is set correctly
-2. `GIT_TOKEN` is a valid personal access token
-3. The token has appropriate permissions
-
-**Creating a GitHub Personal Access Token:**
-1. GitHub → Settings → Developer settings → Personal access tokens
-2. Generate new token (classic)
-3. Select scopes: `repo` (private) or `public_repo` (public)
-4. Copy and use as `GIT_TOKEN`
-
-### Manual operations inside container
+### Manual operations
 
 ```bash
-# Get a shell in the container
-docker compose exec backend bash
+# Get shell in container
+docker compose exec backend sh
 
-# Check git status
-cd /app/photos && git status
+# Check what container sees
+ls -la /app/photos
+ls -la /app/repos/Photos.git
 
-# Manual git pull
-cd /app/photos && git pull
-
-# List photos
-ls -la /app/photos/*.jpg
-```
-
-### Permission denied errors
-
-```bash
-# Check ownership on host
-ls -la /path/to/your/photos
-
-# Fix permissions if needed
-chmod -R 755 /path/to/your/photos
+# View container user
+id
+# Output: uid=100(photosort) gid=101(photosort)
 ```
 
 ---
@@ -493,22 +367,32 @@ chmod -R 755 /path/to/your/photos
 PhotoSort-V1/
 ├── docker-compose.yml.example    # Template (tracked in git)
 ├── docker-compose.yml            # Your local config (gitignored)
-├── .env.example                  # Environment template (tracked)
-├── .env                          # Your secrets (gitignored)
+├── .env.example                  # Environment template
+├── .env                          # Your local settings (gitignored)
 └── docs/
     └── PhotoDirectorySetup.md    # This guide
+
+Host directories (example for Scenario 3):
+/home/user/dockerpaths/
+├── Photos.git/                   # Bare repository (git server)
+└── photosWorkingCopy/            # Working copy (mounted in container)
+    ├── .git/                     # Must have o+w permissions
+    ├── photo1.jpg
+    └── photo2.jpg
 ```
 
 ---
 
 ## Summary Checklist
 
-- [ ] Prepare photo directory (with or without git init)
-- [ ] Copy `docker-compose.yml.example` to `docker-compose.yml`
-- [ ] Update volume mount with your photo directory path
-- [ ] Configure `GIT_REPO_PATH` to match container mount point
-- [ ] (Optional) Configure `GIT_REPO_URL` for automatic sync
-- [ ] (Optional) Set `GIT_USERNAME` and `GIT_TOKEN` for private repos
-- [ ] Start containers with `./scripts/start.sh`
-- [ ] Click "Rescan Photos Now" on Configuration page
-- [ ] Verify photos appear in the application
+### For Scenario 3 (Local Git Server):
+
+- [ ] Create bare repository: `git clone --bare /source /path/Photos.git`
+- [ ] Create working copy: `git clone /path/Photos.git /path/photosWorkingCopy`
+- [ ] Set remote to container path: `git remote set-url origin /app/repos/Photos.git`
+- [ ] Update `docker-compose.yml` with both volume mounts
+- [ ] Update `.env` with `GIT_REPO_URL=file:///app/repos/Photos.git`
+- [ ] Fix permissions: `chmod -R o+w /path/photosWorkingCopy/.git`
+- [ ] Start containers: `./scripts/start.sh`
+- [ ] Verify in logs: `docker compose logs backend | grep -i "processed"`
+- [ ] Check Photos page in UI
