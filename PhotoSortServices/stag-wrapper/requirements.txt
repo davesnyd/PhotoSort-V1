@@ -1,0 +1,26 @@
+# STAG Wrapper Requirements
+# Copyright 2025, David Snyderman
+#
+# Python dependencies for AI photo tagging
+
+# Pin transformers to version compatible with RAM
+# (apply_chunking_to_forward was removed in newer versions)
+transformers>=4.35.0,<4.48.0
+
+# RAM (Recognize Anything Model)
+ram @ git+https://github.com/xinyu1205/recognize-anything.git@88c2b0ca13e38cca6655f83ad0185271167dbcbf
+
+# Image processing
+pillow>=11.0.0
+pillow_heif>=0.20.0
+
+# Hugging Face for model downloads
+huggingface-hub>=0.26.0
+
+# PyTorch (CPU version for smaller image size)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.6.0+cpu
+torchvision==0.21.0+cpu
+
+# Optional: RAW file support (requires libraw)
+# rawpy>=0.23.1

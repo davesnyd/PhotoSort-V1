@@ -71,6 +71,13 @@ services:
       GIT_TOKEN: ${GIT_TOKEN}
       GIT_POLL_INTERVAL_MINUTES: ${GIT_POLL_INTERVAL_MINUTES:-5}
 
+      # STAG AI Tagging Configuration
+      # STAG_DIR: Directory containing STAG source files (xmphandler.py, etc.)
+      STAG_DIR: ${STAG_DIR:-/app/stag}
+      # STAG script and Python paths (configured for Docker container)
+      STAG_SCRIPT_PATH: ${STAG_SCRIPT_PATH:-/app/stag-wrapper/stag_single.py}
+      STAG_PYTHON_EXECUTABLE: ${STAG_PYTHON_EXECUTABLE:-/app/stag-venv/bin/python3}
+
       # Server configuration
       SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
@@ -101,6 +108,18 @@ services:
       # The container path (/app/photos) must match GIT_REPO_PATH above
       # ============================================================================
       - "/path/to/your/photos:/app/photos"
+      # ============================================================================
+      # STAG AI TAGGING (Optional) - Mount STAG source for AI photo tagging
+      # ============================================================================
+      # If you have STAG installed, mount it here for AI-generated photo tags.
+      # Download STAG from: https://github.com/DIVISIO-AI/stag
+      # The xmphandler.py and other source files are needed at runtime.
+      #
+      # Example: - "/home/username/STAG/stag-main:/app/stag:ro"
+      # ============================================================================
+      - "/path/to/STAG/stag-main:/app/stag:ro"
+      # Hugging Face model cache (persists AI model downloads)
+      - hf_cache:/app/hf-cache
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     networks:
@@ -143,6 +162,8 @@ volumes:
   postgres_data:
     driver: local
   backend_logs:
+    driver: local
+  hf_cache:
     driver: local
 
 # Network for inter-container communication
