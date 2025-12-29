@@ -16,6 +16,8 @@ const Configuration = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [rescanning, setRescanning] = useState(false);
   const [rescanResult, setRescanResult] = useState(null);
+  const [reprocessing, setReprocessing] = useState(false);
+  const [reprocessResult, setReprocessResult] = useState(null);
 
   // Load configuration on component mount
   useEffect(() => {
@@ -80,6 +82,32 @@ const Configuration = () => {
       setError('Error during rescan: ' + err.message);
     } finally {
       setRescanning(false);
+    }
+  };
+
+  const handleReprocessAll = async () => {
+    try {
+      setReprocessing(true);
+      setReprocessResult(null);
+      setError(null);
+
+      const response = await configService.reprocessAllPhotos();
+
+      if (response.success) {
+        setReprocessResult({
+          success: true,
+          message: `Reprocess completed! ${response.data.photosReprocessed} photo(s) reprocessed, ${response.data.errors} error(s).`
+        });
+
+        // Hide success message after 10 seconds
+        setTimeout(() => setReprocessResult(null), 10000);
+      } else {
+        setError(response.error?.message || 'Reprocess failed');
+      }
+    } catch (err) {
+      setError('Error during reprocess: ' + err.message);
+    } finally {
+      setReprocessing(false);
     }
   };
 
@@ -239,6 +267,27 @@ const Configuration = () => {
             <p style={styles.rescanHelp}>
               Forces a full rescan of all photos in the configured repository directory.
             </p>
+          </div>
+          <div style={styles.rescanContainer}>
+            <button
+              onClick={handleReprocessAll}
+              disabled={reprocessing}
+              style={{
+                ...styles.rescanButton,
+                ...(reprocessing ? styles.rescanButtonDisabled : {}),
+                backgroundColor: reprocessing ? '#ccc' : '#28a745'
+              }}
+            >
+              {reprocessing ? 'Reprocessing...' : 'Reprocess All Photos'}
+            </button>
+            <p style={styles.rescanHelp}>
+              Regenerates thumbnails and re-extracts metadata for all existing photos.
+            </p>
+            {reprocessResult && (
+              <p style={{ ...styles.rescanHelp, color: reprocessResult.success ? 'green' : 'red' }}>
+                {reprocessResult.message}
+              </p>
+            )}
           </div>
         </div>
 

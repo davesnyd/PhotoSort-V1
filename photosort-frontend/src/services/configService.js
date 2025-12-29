@@ -38,8 +38,19 @@ export const triggerRescan = async () => {
   return response.data;
 };
 
+/**
+ * Reprocess all existing photos
+ * Regenerates thumbnails, re-extracts EXIF, metadata, and tags for all photos
+ * @returns {Promise} Reprocess result with counts
+ */
+export const reprocessAllPhotos = async () => {
+  const response = await api.post('/api/config/reprocess-all');
+  return response.data;
+};
+
 export default {
   getConfiguration,
   updateConfiguration,
-  triggerRescan
+  triggerRescan,
+  reprocessAllPhotos
 };
