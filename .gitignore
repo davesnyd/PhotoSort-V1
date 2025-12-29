@@ -71,3 +71,7 @@ logs/
 
 # Screenshots (temporary/documentation work)
 screencaps/
+
+# Local Docker Compose configuration
+# Use docker-compose.yml.example as a template
+docker-compose.yml

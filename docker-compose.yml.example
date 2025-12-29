@@ -1,0 +1,151 @@
+# PhotoSort Docker Compose Configuration
+# Copyright 2025, David Snyderman
+#
+# SETUP INSTRUCTIONS:
+# 1. Copy this file to docker-compose.yml:
+#    cp docker-compose.yml.example docker-compose.yml
+#
+# 2. Edit docker-compose.yml with your local settings (see comments below)
+#
+# 3. Create a .env file for sensitive values (passwords, tokens)
+#    See .env.example for reference
+#
+# 4. docker-compose.yml is gitignored - your local config won't be committed
+#
+# Full stack deployment: PostgreSQL + Backend + Frontend
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15-alpine
+    container_name: photosort-database
+    environment:
+      POSTGRES_DB: ${DB_NAME:-PhotoSortData}
+      POSTGRES_USER: ${DB_USERNAME:-photosort_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - photosort-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-photosort_user} -d ${DB_NAME:-PhotoSortData}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./PhotoSortServices
+      dockerfile: Dockerfile
+    container_name: photosort-backend
+    environment:
+      # Database configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/${DB_NAME:-PhotoSortData}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-photosort_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-changeme}
+
+      # OAuth configuration
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:3000/login/oauth2/code/google}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE: profile,email
+
+      # Frontend URL for OAuth redirect and CORS
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:3000}
+
+      # Git repository configuration
+      # GIT_REPO_PATH: Path inside container where photos are mounted (must match volume below)
+      GIT_REPO_PATH: ${GIT_REPO_PATH:-/app/photos}
+      # GIT_REPO_URL: Remote repository URL for automatic git pull
+      #   - For GitHub/GitLab: https://github.com/username/repo
+      #   - For local-only repos: Leave empty or omit (no automatic pull)
+      #   - See docs/PhotoDirectorySetup.md for details
+      GIT_REPO_URL: ${GIT_REPO_URL}
+      GIT_USERNAME: ${GIT_USERNAME}
+      GIT_TOKEN: ${GIT_TOKEN}
+      GIT_POLL_INTERVAL_MINUTES: ${GIT_POLL_INTERVAL_MINUTES:-5}
+
+      # Server configuration
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+
+      # JPA/Hibernate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      SPRING_JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+
+      # Java options
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx512m -Xms256m}
+    volumes:
+      - backend_logs:/app/logs
+      # ============================================================================
+      # PHOTO DIRECTORY MOUNT - CUSTOMIZE THIS FOR YOUR SYSTEM
+      # ============================================================================
+      # Format: "HOST_PATH:CONTAINER_PATH"
+      #
+      # Replace the host path with YOUR photo directory location:
+      #   - Must be an absolute path (starting with /)
+      #   - Use quotes if path contains spaces
+      #   - Must contain a git repository (have a .git folder)
+      #
+      # Examples:
+      #   - "/home/username/Photos:/app/photos"
+      #   - "/mnt/nas/family-photos:/app/photos"
+      #   - "/home/user/My Pictures:/app/photos"  (quotes needed for spaces)
+      #
+      # The container path (/app/photos) must match GIT_REPO_PATH above
+      # ============================================================================
+      - "/path/to/your/photos:/app/photos"
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - photosort-network
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # React Frontend (nginx)
+  frontend:
+    build:
+      context: ./photosort-frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://localhost:8080}
+    container_name: photosort-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - photosort-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+# Network for inter-container communication
+networks:
+  photosort-network:
+    driver: bridge
