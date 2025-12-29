@@ -253,7 +253,93 @@ volumes:
 
 **Behavior:** Every 10 minutes, application runs `git pull` and processes new photos.
 
-### Scenario 3: Multiple Machines Syncing
+### Scenario 3: Git Repository on the Host Machine (Local Server)
+
+Your photo repository's remote origin is on the same machine running Docker (or on your local network), not on GitHub.
+
+**Understanding the Setup:**
+- The container runs in an isolated network
+- To access the host machine from inside the container, use `host.docker.internal` (Docker Desktop) or the host's IP address
+- For bare repositories on the host, you need to mount them or expose via network
+
+**Option A: Host has a bare repository serving as origin**
+
+If you have a bare git repository on your host (e.g., `/home/user/repos/photos.git`):
+
+```yaml
+# docker-compose.yml
+services:
+  backend:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Allows container to reach host
+    environment:
+      GIT_REPO_PATH: /app/photos
+      # Use host.docker.internal to reference the Docker host
+      # Note: Requires git daemon or SSH server running on host
+      GIT_REPO_URL: git://host.docker.internal/photos.git
+      # Or for SSH (if SSH server is running on host):
+      # GIT_REPO_URL: ssh://user@host.docker.internal/home/user/repos/photos.git
+    volumes:
+      - "/home/user/Pictures:/app/photos"
+```
+
+**Option B: Mount the bare repository into the container**
+
+Simpler approach - mount both the working directory AND the bare repo:
+
+```yaml
+# docker-compose.yml
+services:
+  backend:
+    environment:
+      GIT_REPO_PATH: /app/photos
+      GIT_REPO_URL: file:///app/repos/photos.git  # file:// URL to mounted bare repo
+    volumes:
+      - "/home/user/Pictures:/app/photos"
+      - "/home/user/repos/photos.git:/app/repos/photos.git:ro"  # Mount bare repo read-only
+```
+
+**Option C: Local network server**
+
+If the git server is another machine on your network:
+
+```yaml
+# docker-compose.yml
+environment:
+  GIT_REPO_PATH: /app/photos
+  GIT_REPO_URL: http://192.168.1.100:3000/user/photos.git  # Gitea/GitLab on LAN
+  # Or SSH:
+  # GIT_REPO_URL: ssh://git@192.168.1.100/repos/photos.git
+  GIT_USERNAME: your-username
+  GIT_TOKEN: your-token
+```
+
+**Option D: No remote, manage git on host (Recommended for simplicity)**
+
+The simplest approach - don't configure a remote URL. Manage git operations on the host:
+
+```yaml
+# docker-compose.yml
+environment:
+  GIT_REPO_PATH: /app/photos
+  # GIT_REPO_URL: (leave empty)
+volumes:
+  - "/home/user/Pictures:/app/photos"
+```
+
+Then on your host machine:
+```bash
+# Add new photos and commit
+cd /home/user/Pictures
+git add .
+git commit -m "Added vacation photos"
+
+# Trigger rescan in the application UI, or wait for next poll cycle
+```
+
+**Behavior:** The application detects new commits in the mounted directory and processes new photos. You control when commits happen from your host machine.
+
+### Scenario 4: Multiple Machines Syncing
 
 You have the same repository cloned on multiple machines.
 
